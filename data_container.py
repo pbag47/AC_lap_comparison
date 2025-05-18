@@ -1,7 +1,7 @@
-
 import csv
 import json
 import re
+
 
 class InfoField:
     def __init__(self, title: str, unit: str, value: float | int | bool | str | None):
@@ -15,8 +15,13 @@ class InfoField:
 
 class InfoContainer:
     def __init__(self, titles, units, values):
-        attributes_names = self._get_attributes_names(titles)
+        attributes_names, indices_to_delete = self._get_attributes_names(titles)
         field_values = self._get_values(values)
+        indices_to_delete.sort(reverse=True)
+        for index in indices_to_delete:
+            del titles[index]
+            del units[index]
+            del field_values[index]
         if len(attributes_names) != len(titles) or len(attributes_names) != len(units) or len(attributes_names) != len(field_values):
             raise ImportError("Mismatch in number of columns for InfoContainer: " +
                               str(len(attributes_names)) + " attributes, " +
@@ -35,17 +40,18 @@ class InfoContainer:
     @staticmethod
     def _get_attributes_names(titles: list[str]):
         attributes_names = []
-        index = 0
-        for name in titles:
+        indices_to_delete = []
+        for i in range(len(titles)):
+            name = titles[i]
             name = name.replace(' ', '_')
             name = name.casefold()
             name = re.sub('[^0-9a-z_]', '', name)
             name = re.sub('^[^a-z_]+', '', name)
             if not name:
-                name = 'additional_field_' + str(index)
-                index += 1
+                indices_to_delete.append(i)
+                continue
             attributes_names.append(name)
-        return attributes_names
+        return attributes_names, indices_to_delete
 
     @staticmethod
     def _get_values(values: list[str]):
@@ -65,9 +71,60 @@ class InfoContainer:
         return inferred_values
 
 
+class DataField:
+    def __init__(self, title: str, unit: str, values_str: list[str]):
+        self.title: str = title
+        self.unit: str = unit
+        self.indices: list[int] = []
+        self.values: list[int | float | bool] = []
+        self.get_indices(values_str)
+
+    def get_indices(self, values_str: list[str]):
+        for i in range(len(values_str)):
+            try:
+                value = json.decoder.JSONDecoder().decode(values_str[i])
+                self.indices.append(i)
+                self.values.append(value)
+            except json.decoder.JSONDecodeError:
+                pass
+
+
 class DataContainer:
     def __init__(self, titles, units, values):
         print(len(titles), len(units), len(values))
+        attributes_names, indices_to_delete = self._get_attributes_names(titles)
+        indices_to_delete.sort(reverse=True)
+        for index in indices_to_delete:
+            del titles[index]
+            del units[index]
+            try:
+                del values[index]
+            except IndexError:
+                pass
+        if len(attributes_names) != len(titles) or len(attributes_names) != len(units) or len(attributes_names) != len(values):
+            raise ImportError("Mismatch in number of columns for DataContainer: " +
+                              str(len(attributes_names)) + " attributes, " +
+                              str(len(titles)) + " titles, " +
+                              str(len(units)) + " units, " +
+                              str(len(values)) + " values columns")
+        for attribute_name, title, unit, value_column in zip(attributes_names, titles, units, values):
+            setattr(self, attribute_name, DataField(title, unit, value_column))
+
+    @staticmethod
+    def _get_attributes_names(titles: list[str]):
+        attributes_names = []
+        indices_to_delete = []
+        for i in range(len(titles)):
+            name = titles[i]
+            name = name.replace(' ', '_')
+            name = name.casefold()
+            name = re.sub('[^0-9a-z_]', '', name)
+            name = re.sub('^[^a-z_]+', '', name)
+            if not name:
+                indices_to_delete.append(i)
+                continue
+            attributes_names.append(name)
+        return attributes_names, indices_to_delete
 
 
 def main(data_file: str):
@@ -88,14 +145,21 @@ def main(data_file: str):
         row = next(csv_reader)
         while not row:
             row = next(csv_reader)
-    return header, info
+        titles = row
+        units = next(csv_reader)
+        for i, row in enumerate(csv_reader):
+            if i == 0:
+                data = [[] for _ in range(len(row))]
+            for j, col in enumerate(row):
+                data[j].append(col)
+        data = DataContainer(titles, units, data)
+    return header, info, data
 
 
 
 
 if __name__ == '__main__':
     source_file = 'data/corvette_c7_laguna_seca_example.csv'
-    h, i = main(source_file)
-
-    print(i)
+    h, info_container, data_container = main(source_file)
+    print(info_container)
 
