@@ -1,5 +1,6 @@
 import csv
 import json
+import plotly.graph_objects
 import re
 
 
@@ -156,10 +157,25 @@ def main(data_file: str):
     return header, info, data
 
 
+def plot_trajectory(data):
+    figure = plotly.graph_objects.Figure()
+    figure.add_trace(plotly.graph_objects.Scatter3d(x=data.car_coord_x.values,
+                                                    y=data.car_coord_y.values,
+                                                    z=data.car_coord_z.values,)
+                     )
+    figure.update_layout(scene=dict(aspectmode='data',
+                                    aspectratio=dict(x=1, y=1, z=1)
+                                    )
+                         )
+    figure.show()
+
+
 
 
 if __name__ == '__main__':
     source_file = 'data/corvette_c7_laguna_seca_example.csv'
     h, info_container, data_container = main(source_file)
     print(info_container)
+    plot_trajectory(data_container)
+
 
