@@ -1,0 +1,3 @@
+Turn    TL latitude TL longitude    BR latitude BR longitude
+T1  36°35'01"N  121°45'29"W 36°34'56"N  121°45'24"W
+T2  36°35'06"N  121°45'26"W 36°35'02"N  121°45'20"W

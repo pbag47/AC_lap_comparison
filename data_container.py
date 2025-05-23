@@ -173,7 +173,8 @@ def plot_trajectory(data):
 
 
 if __name__ == '__main__':
-    source_file = 'data/corvette_c7_laguna_seca_example.csv'
+    # source_file = 'data/corvette_c7_laguna_seca_example.csv'
+    source_file = 'data/gps_calibration.csv'
     h, info_container, data_container = main(source_file)
     print(info_container)
     plot_trajectory(data_container)
