@@ -1,5 +1,6 @@
 from numpy import sin, cos, atan2, deg2rad, sqrt
 from PIL import Image
+from typing import Literal
 import lat_lon_parser
 
 import plotly
@@ -11,16 +12,12 @@ class Coordinates:
                  y: float = 0.0,
                  z: float = 0.0,
                  latitude: float = 0.0,
-                 longitude: float = 0.0,
-                 px: int = 0,
-                 py: int = 0):
+                 longitude: float = 0.0):
         self.x = x
         self.y = y
         self.z = z
         self.latitude = latitude
         self.longitude = longitude
-        self.px = px
-        self.py = py
 
 
 def cartesian_distance(p1: Coordinates, p2: Coordinates):
@@ -38,6 +35,19 @@ def gps_distance(p1: Coordinates, p2: Coordinates, altitude=254):
     return earth_radius * c
 
 
+def get_dx_dy(p1: Coordinates, p2: Coordinates, method: Literal['cartesian', 'gps'] = 'cartesian') -> tuple[float, float]:
+    p1x = Coordinates(x=p1.x, longitude=p1.longitude)
+    p1y = Coordinates(y=p1.y, latitude=p1.latitude)
+    p2x = Coordinates(x=p2.x, longitude=p2.longitude)
+    p2y = Coordinates(y=p2.y, latitude=p2.latitude)
+    if method == 'cartesian':
+        return cartesian_distance(p1x, p2x), cartesian_distance(p1y, p2y)
+    elif method == 'gps':
+        return gps_distance(p1x, p2x, altitude=254), gps_distance(p1y, p2y, altitude=254)
+    else:
+        raise ValueError('Method must be either cartesian or gps')
+
+
 def get_reference_data(file_name: str) -> tuple[Coordinates, Coordinates]:
     with open(file_name, 'r') as file:
         _ = file.readline()  # Header
@@ -46,15 +56,11 @@ def get_reference_data(file_name: str) -> tuple[Coordinates, Coordinates]:
     p1 = Coordinates(x=float(p1_data[0]),
                y=float(p1_data[1]),
                latitude=lat_lon_parser.parse(p1_data[2]),
-               longitude=lat_lon_parser.parse(p1_data[3]),
-               px=int(p1_data[4]),
-               py=int(p1_data[5]))
+               longitude=lat_lon_parser.parse(p1_data[3]))
     p2 = Coordinates(x=float(p2_data[0]),
                y=float(p2_data[1]),
                latitude=lat_lon_parser.parse(p2_data[2]),
-               longitude=lat_lon_parser.parse(p2_data[3]),
-               px=int(p2_data[4]),
-               py=int(p2_data[5]))
+               longitude=lat_lon_parser.parse(p2_data[3]))
     return p1, p2
 
 
@@ -70,11 +76,11 @@ def image_plot(image_file_name: str, info):
     bottom_right = info[1]
     figure = plotly.graph_objects.Figure()
     with Image.open(image_file_name) as image:
-        width, height = image.size
+        width, height = image.size  # To be replaced by x and y distances between top_left and bottom_right points
         figure.add_layout_image(
-            x=0,
+            x=0,  # To be replaced by top_left.x
+            y=0,  # To be replaced by bottom_right.y
             sizex=width,
-            y=0,
             sizey=height,
             xref="x",
             yref="y",

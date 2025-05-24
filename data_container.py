@@ -2,6 +2,7 @@ import csv
 import json
 import plotly.graph_objects
 import re
+import numpy
 
 
 class InfoField:
@@ -77,7 +78,7 @@ class DataField:
         self.title: str = title
         self.unit: str = unit
         self.indices: list[int] = []
-        self.values: list[int | float | bool] = []
+        self.values: numpy.ndarray = numpy.ndarray(len(values_str))
         self.get_indices(values_str)
 
     def get_indices(self, values_str: list[str]):
@@ -85,7 +86,7 @@ class DataField:
             try:
                 value = json.decoder.JSONDecoder().decode(values_str[i])
                 self.indices.append(i)
-                self.values.append(value)
+                self.values[i] = value
             except json.decoder.JSONDecodeError:
                 pass
 
@@ -154,6 +155,10 @@ def main(data_file: str):
             for j, col in enumerate(row):
                 data[j].append(col)
         data = DataContainer(titles, units, data)
+
+        # Invert x and y coordinates so x+ points towards east and y+ points towards north
+        data.car_coord_x.values = - data.car_coord_x.values
+        data.car_coord_y.values = - data.car_coord_y.values
     return header, info, data
 
 
