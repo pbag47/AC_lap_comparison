@@ -1,5 +1,8 @@
 from numpy import sin, cos, atan2, deg2rad, sqrt
+from PIL import Image
 import lat_lon_parser
+
+import plotly
 
 
 class Coordinates:
@@ -62,5 +65,37 @@ def validation(file_name: str):
     print("Error:", abs(d_cartesian - d_gps), "m")
 
 
+def image_plot(image_file_name: str, info):
+    top_left = info[0]
+    bottom_right = info[1]
+    figure = plotly.graph_objects.Figure()
+    with Image.open(image_file_name) as image:
+        width, height = image.size
+        figure.add_layout_image(
+            x=0,
+            sizex=width,
+            y=0,
+            sizey=height,
+            xref="x",
+            yref="y",
+            opacity=1.0,
+            layer="below",
+            source=image,
+            xanchor="left",
+            yanchor="bottom",
+        )
+    figure.update_layout(scene=dict(aspectmode='data',
+                                    aspectratio=dict(x=1, y=1, z=1)
+                                    ),
+                         template="plotly_dark",
+                         )
+    figure.show()
+
+
+
+
 if __name__ == '__main__':
     validation("config/reference_points.txt")
+    tl = Coordinates(latitude=lat_lon_parser.parse("36.583778°N"), longitude=lat_lon_parser.parse("121.758089°W"))
+    br = Coordinates(latitude=lat_lon_parser.parse("36.582364°N"), longitude=lat_lon_parser.parse("121.756692°W"))
+    image_plot("config/sections/T1.png", [tl, br])

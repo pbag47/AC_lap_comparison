@@ -165,7 +165,8 @@ def plot_trajectory(data):
                      )
     figure.update_layout(scene=dict(aspectmode='data',
                                     aspectratio=dict(x=1, y=1, z=1)
-                                    )
+                                    ),
+                         template="plotly_dark",
                          )
     figure.show()
 
