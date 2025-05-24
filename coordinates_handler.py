@@ -1,4 +1,5 @@
 from numpy import sin, cos, atan2, deg2rad, sqrt
+import lat_lon_parser
 
 
 class Coordinates:
@@ -23,7 +24,7 @@ def cartesian_distance(p1: Coordinates, p2: Coordinates):
     return sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2 + (p1.z - p2.z)**2)
 
 
-def gps_distance(p1: Coordinates, p2: Coordinates, altitude=248):
+def gps_distance(p1: Coordinates, p2: Coordinates, altitude=254):
     earth_radius = 6_371_000 + altitude
     latitude_difference = deg2rad(p1.latitude - p2.latitude)
     longitude_difference = deg2rad(p1.longitude - p2.longitude)
@@ -41,14 +42,14 @@ def get_reference_data(file_name: str) -> tuple[Coordinates, Coordinates]:
         p2_data = file.readline().split()
     p1 = Coordinates(x=float(p1_data[0]),
                y=float(p1_data[1]),
-               latitude=float(p1_data[2]),
-               longitude=float(p1_data[3]),
+               latitude=lat_lon_parser.parse(p1_data[2]),
+               longitude=lat_lon_parser.parse(p1_data[3]),
                px=int(p1_data[4]),
                py=int(p1_data[5]))
     p2 = Coordinates(x=float(p2_data[0]),
                y=float(p2_data[1]),
-               latitude=float(p2_data[2]),
-               longitude=float(p2_data[3]),
+               latitude=lat_lon_parser.parse(p2_data[2]),
+               longitude=lat_lon_parser.parse(p2_data[3]),
                px=int(p2_data[4]),
                py=int(p2_data[5]))
     return p1, p2
