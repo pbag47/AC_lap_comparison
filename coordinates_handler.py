@@ -81,17 +81,13 @@ def image_plot(image_file_name: str, info):
             opacity=1.0,
             layer="below",
             source=image,
+            sizing='stretch',
             xanchor="left",
             yanchor="bottom",
         )
-    figure.update_layout(scene=dict(aspectmode='data',
-                                    aspectratio=dict(x=1, y=1, z=1)
-                                    ),
-                         template="plotly_dark",
-                         )
+    figure.update_yaxes(scaleanchor="x", scaleratio=1)
+    figure.update_layout(template="plotly_dark")
     figure.show()
-
-
 
 
 if __name__ == '__main__':
