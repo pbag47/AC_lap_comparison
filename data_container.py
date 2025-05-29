@@ -4,6 +4,8 @@ import plotly.graph_objects
 import re
 import numpy
 
+from coordinates_handler import Origin, plot_track_map
+
 
 class InfoField:
     def __init__(self, title: str, unit: str, value: float | int | bool | str | None):
@@ -162,8 +164,7 @@ def main(data_file: str):
     return header, info, data
 
 
-def plot_trajectory(data):
-    figure = plotly.graph_objects.Figure()
+def plot_3d_trajectory(data, figure):
     figure.add_trace(plotly.graph_objects.Scatter3d(x=data.car_coord_x.values,
                                                     y=data.car_coord_y.values,
                                                     z=data.car_coord_z.values,)
@@ -176,13 +177,25 @@ def plot_trajectory(data):
     figure.show()
 
 
+def plot_trajectory(data, figure):
+    figure.add_trace(plotly.graph_objects.Scatter(x=data.car_coord_x.values,
+                                                  y=data.car_coord_y.values,
+                                                  )
+                     )
+    figure.update_yaxes(scaleanchor="x", scaleratio=1)
+    figure.update_layout(template="plotly_dark")
+    figure.show()
 
 
 if __name__ == '__main__':
     # source_file = 'data/corvette_c7_laguna_seca_example.csv'
-    source_file = 'data/gps_calibration.csv'
+    # source_file = 'data/gps_calibration.csv'
+    source_file = 'data/turn_in_out_calibration.csv'
     h, info_container, data_container = main(source_file)
     print(info_container)
-    plot_trajectory(data_container)
+    Origin.setup("config/reference_points.txt")
+    fig = plotly.graph_objects.Figure()
+    plot_track_map('config/sections/index.txt', fig)
+    plot_trajectory(data_container, fig)
 
 

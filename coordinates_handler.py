@@ -21,13 +21,22 @@ class Origin:
     @classmethod
     def setup(cls, reference_points_file_name: str):
         p1, p2 = get_reference_data(reference_points_file_name)
-        cls.latitude = p1.latitude + rad2deg(p1.y / EARTH_RADIUS)
-        cls.longitude = p1.longitude + rad2deg(p1.x / EARTH_RADIUS) / cos(deg2rad(p1.latitude))
+        origin1 = Coordinates(x=0, y=0, z=0)
+        origin1.latitude = p1.latitude - rad2deg(p1.y / EARTH_RADIUS)
+        origin1.longitude = p1.longitude - rad2deg(p1.x / EARTH_RADIUS) / cos(deg2rad(p1.latitude))
         origin2 = Coordinates(x=0, y=0, z=0)
-        origin2.latitude = p2.latitude + rad2deg(p2.y / EARTH_RADIUS)
-        origin2.longitude = p2.longitude + rad2deg(p2.x / EARTH_RADIUS) / cos(deg2rad(p2.latitude))
-        error = gps_distance(cls, origin2)
+        origin2.latitude = p2.latitude - rad2deg(p2.y / EARTH_RADIUS)
+        origin2.longitude = p2.longitude - rad2deg(p2.x / EARTH_RADIUS) / cos(deg2rad(p2.latitude))
+        error = gps_distance(origin1, origin2)
         print("Origin precision:", error, "m")
+
+        # cls.latitude = origin1.latitude
+        # cls.longitude = origin1.longitude
+
+        cls.latitude = origin2.latitude
+        cls.longitude = origin2.longitude
+
+        print("Origin:", cls.latitude, cls.longitude)
 
 
 class Coordinates:
@@ -124,14 +133,19 @@ def plot_track_map(info_file_name: str, figure: plotly.graph_objects.Figure):
     with open(info_file_name, 'r') as file:
         _ = file.readline()
         for line in file.readlines():
-            values = line.split()
-            name = values[0]
-            top_left = Coordinates(latitude=lat_lon_parser.parse(values[1]),
-                                   longitude=lat_lon_parser.parse(values[2]))
+            name, tl_lat, tl_lon, br_lat, br_lon, x_offset, y_offset = line.split()
+            top_left = Coordinates(latitude=lat_lon_parser.parse(tl_lat),
+                                   longitude=lat_lon_parser.parse(tl_lon))
             top_left.get_xy_from_lat_lon()
-            bottom_right = Coordinates(latitude=lat_lon_parser.parse(values[3]),
-                                       longitude=lat_lon_parser.parse(values[4]))
+            top_left.x += float(x_offset)
+            top_left.y += float(y_offset)
+
+            bottom_right = Coordinates(latitude=lat_lon_parser.parse(br_lat),
+                                       longitude=lat_lon_parser.parse(br_lon))
             bottom_right.get_xy_from_lat_lon()
+            bottom_right.x += float(x_offset)
+            bottom_right.y += float(y_offset)
+
             image_file_name = 'config/sections/' + name + '.png'
             with Image.open(image_file_name) as image:
                 width = abs(dx(top_left, bottom_right, method='cartesian'))
