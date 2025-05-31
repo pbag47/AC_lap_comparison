@@ -2,6 +2,7 @@ from numpy import sin, cos, atan2, deg2rad, sqrt, rad2deg
 from PIL import Image
 from typing import Literal, Type
 
+import configparser
 import lat_lon_parser
 import plotly
 
@@ -59,6 +60,49 @@ class Coordinates:
     def get_lat_lon_from_xy(self):
         self.latitude = Origin.latitude + rad2deg(self.y / EARTH_RADIUS)
         self.longitude = Origin.longitude + rad2deg(self.x / EARTH_RADIUS) / cos(deg2rad(Origin.latitude))
+
+
+class Section:
+    def __init__(self,
+                 title: str,
+                 start: float = 0.0,
+                 stop: float = 0.0,
+                 top_left: Coordinates | None = None,
+                 bottom_right: Coordinates | None = None):
+        self.title = title
+        self.start = start
+        self.stop = stop
+        self.top_left = top_left
+        self.bottom_right = bottom_right
+        self.image = None
+
+    def setup(self):
+        if self.top_left is not None and self.bottom_right is not None:
+            image_file_name = 'config/sections/' + self.title + '.png'
+            self.image = Image.open(image_file_name)
+        else:
+            self.image = None
+
+    def plot(self, figure: plotly.graph_objects.Figure):
+        if self.image is not None:
+            width = abs(dx(self.top_left, self.bottom_right, method='cartesian'))
+            height = abs(dy(self.top_left, self.bottom_right, method='cartesian'))
+            figure.add_layout_image(
+                x=self.top_left.x,
+                y=self.bottom_right.y,
+                sizex=width,
+                sizey=height,
+                xref="x",
+                yref="y",
+                opacity=1.0,
+                layer="below",
+                source=self.image,
+                sizing='stretch',
+                xanchor="left",
+                yanchor="bottom",
+            )
+        figure.update_yaxes(scaleanchor="x", scaleratio=1)
+        figure.update_layout(template="plotly_dark")
 
 
 def cartesian_distance(p1: Coordinates, p2: Coordinates):
@@ -122,6 +166,59 @@ def get_reference_data(file_name: str) -> tuple[Coordinates, Coordinates]:
     return p1, p2
 
 
+def get_images_position(index_file_name: str = 'config/sections/index.txt') -> tuple:
+    with open(index_file_name, 'r') as file:
+        _ = file.readline()
+        name = []
+        tl_lat = []
+        tl_lon = []
+        br_lat = []
+        br_lon = []
+        x_offset = []
+        y_offset = []
+        for line in file.readlines():
+            results = line.split('|')
+            name.append(results[0].rstrip())
+            tl_lat.append(results[1].rstrip())
+            tl_lon.append(results[2].rstrip())
+            br_lat.append(results[3].rstrip())
+            br_lon.append(results[4].rstrip())
+            x_offset.append(results[5].rstrip())
+            y_offset.append(results[6].rstrip())
+        return name, tl_lat, tl_lon, br_lat, br_lon, x_offset, y_offset
+
+
+def get_sections_from_ini_file(ini_file_name: str = "config/sections/sections.ini") -> list[Section]:
+    name, tl_lat, tl_lon, br_lat, br_lon, x_offset, y_offset = get_images_position()
+    config_parser = configparser.ConfigParser()
+    config_parser.read(ini_file_name)
+    sections_str = config_parser.sections()
+    sections = []
+    for section_str in sections_str:
+        section = Section(title=config_parser[section_str]['TEXT'],
+                            start=float(config_parser[section_str]['IN']),
+                            stop=float(config_parser[section_str]['OUT']),
+                            )
+        if section.title in name:
+            index = name.index(section.title)
+            top_left = Coordinates(latitude=lat_lon_parser.parse(tl_lat[index]),
+                                   longitude=lat_lon_parser.parse(tl_lon[index]))
+            top_left.get_xy_from_lat_lon()
+            top_left.x += float(x_offset[index])
+            top_left.y += float(y_offset[index])
+            bottom_right = Coordinates(latitude=lat_lon_parser.parse(br_lat[index]),
+                                       longitude=lat_lon_parser.parse(br_lon[index]))
+            bottom_right.get_xy_from_lat_lon()
+            bottom_right.x += float(x_offset[index])
+            bottom_right.y += float(y_offset[index])
+            section.top_left = top_left
+            section.bottom_right = bottom_right
+        section.setup()
+        sections.append(section)
+    return sections
+
+
+
 def validation(file_name: str):
     p1, p2 = get_reference_data(file_name)
     d_cartesian = cartesian_distance(p1, p2)
@@ -129,44 +226,42 @@ def validation(file_name: str):
     print("Error:", abs(d_cartesian - d_gps), "m")
 
 
-def plot_track_map(info_file_name: str, figure: plotly.graph_objects.Figure):
-    with open(info_file_name, 'r') as file:
-        _ = file.readline()
-        for line in file.readlines():
-            name, tl_lat, tl_lon, br_lat, br_lon, x_offset, y_offset = line.split()
-            top_left = Coordinates(latitude=lat_lon_parser.parse(tl_lat),
-                                   longitude=lat_lon_parser.parse(tl_lon))
-            top_left.get_xy_from_lat_lon()
-            top_left.x += float(x_offset)
-            top_left.y += float(y_offset)
+def plot_track_map(figure: plotly.graph_objects.Figure):
+    name, tl_lat, tl_lon, br_lat, br_lon, x_offset, y_offset = get_images_position()
+    for i in range(len(name)):
+        top_left = Coordinates(latitude=lat_lon_parser.parse(tl_lat[i]),
+                                longitude=lat_lon_parser.parse(tl_lon[i]))
+        top_left.get_xy_from_lat_lon()
+        top_left.x += float(x_offset[i])
+        top_left.y += float(y_offset[i])
 
-            bottom_right = Coordinates(latitude=lat_lon_parser.parse(br_lat),
-                                       longitude=lat_lon_parser.parse(br_lon))
-            bottom_right.get_xy_from_lat_lon()
-            bottom_right.x += float(x_offset)
-            bottom_right.y += float(y_offset)
+        bottom_right = Coordinates(latitude=lat_lon_parser.parse(br_lat[i]),
+                                   longitude=lat_lon_parser.parse(br_lon[i]))
+        bottom_right.get_xy_from_lat_lon()
+        bottom_right.x += float(x_offset[i])
+        bottom_right.y += float(y_offset[i])
 
-            image_file_name = 'config/sections/' + name + '.png'
-            with Image.open(image_file_name) as image:
-                width = abs(dx(top_left, bottom_right, method='cartesian'))
-                height = abs(dy(top_left, bottom_right, method='cartesian'))
-                figure.add_layout_image(
-                    x=top_left.x,
-                    y=bottom_right.y,
-                    sizex=width,
-                    sizey=height,
-                    xref="x",
-                    yref="y",
-                    opacity=1.0,
-                    layer="below",
-                    source=image,
-                    sizing='stretch',
-                    xanchor="left",
-                    yanchor="bottom",
-                )
-            figure.add_trace(plotly.graph_objects.Scatter(x=[top_left.x, bottom_right.x],
-                                                          y=[top_left.y, bottom_right.y],
-                                                          name=name))
+        image_file_name = 'config/sections/' + name[i] + '.png'
+        with Image.open(image_file_name) as image:
+            width = abs(dx(top_left, bottom_right, method='cartesian'))
+            height = abs(dy(top_left, bottom_right, method='cartesian'))
+            figure.add_layout_image(
+                x=top_left.x,
+                y=bottom_right.y,
+                sizex=width,
+                sizey=height,
+                xref="x",
+                yref="y",
+                opacity=1.0,
+                layer="below",
+                source=image,
+                sizing='stretch',
+                xanchor="left",
+                yanchor="bottom",
+            )
+        figure.add_trace(plotly.graph_objects.Scatter(x=[top_left.x, bottom_right.x],
+                                                      y=[top_left.y, bottom_right.y],
+                                                      name=name[i]))
     figure.update_yaxes(scaleanchor="x", scaleratio=1)
     figure.update_layout(template="plotly_dark")
 
@@ -175,5 +270,9 @@ if __name__ == '__main__':
     validation("config/reference_points.txt")
     Origin.setup("config/reference_points.txt")
     fig = plotly.graph_objects.Figure()
-    plot_track_map('config/sections/index.txt', fig)
+
+    track_sections = get_sections_from_ini_file()
+    for track_section in track_sections:
+        track_section.plot(fig)
+    # plot_track_map(fig)
     fig.show()
