@@ -195,7 +195,7 @@ if __name__ == '__main__':
     print(info_container)
     Origin.setup("config/reference_points.txt")
     fig = plotly.graph_objects.Figure()
-    plot_track_map('config/sections/index.txt', fig)
+    plot_track_map(fig)
     plot_trajectory(data_container, fig)
 
 
