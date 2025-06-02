@@ -2,6 +2,7 @@ from unittest import case
 
 # from dash import Dash, dcc, html, Input, Output, callback
 import dash
+import dash_mantine_components as dmc
 
 from coordinates_handler import Origin, plot_track_map
 from data_container import DataContainer
@@ -22,18 +23,26 @@ class MainApp:
             ])
         self.data_selection: list[Selection] = []
 
-    @dash.callback(dash.Output('analysis_page', 'children'),
-                    dash.Input('analysis_tabs', 'value'))
-    def render_analysis(self, selected_tab):
-        match selected_tab:
-            case 'rankings':
-                pass
-            case 'session':
-                pass
-            case 'lap':
-                pass
 
-
+@dash.callback(dash.Output('analysis_page', 'children'),
+                dash.Input('analysis_tabs', 'value'))
+def render_analysis(selected_tab):
+    match selected_tab:
+        case 'rankings':
+            sub_page = dash.html.Div([
+                dash.html.H3('rankings'),
+            ])
+        case 'session':
+            sub_page = dash.html.Div([
+                dash.html.H3('session'),
+            ])
+        case 'lap':
+            sub_page = dash.html.Div([
+                dash.html.H3('lap'),
+            ])
+        case _:
+            sub_page = dash.html.Div([])
+    return sub_page
 
 
 
