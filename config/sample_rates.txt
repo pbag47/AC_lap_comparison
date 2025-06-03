@@ -1,0 +1,168 @@
+Channel |   Sample rate (Hz)
+time    | 30
+Last Sector Time | 1
+Fuel Level | 1
+Air Temp | 1
+Air Density | 1
+Road Temp | 1
+Surface Grip | 1
+Wind Direction | 1
+Wind Speed | 1
+Race Flag | 1
+Brake Bias | 1
+Lap Invalidated | 1
+Engine Brake Setting | 1
+Tire Pressure FL | 1
+Tire Pressure FR | 1
+Tire Pressure RL | 1
+Tire Pressure RR | 1
+Tire Rubber Grip FL | 1
+Tire Rubber Grip FR | 1
+Tire Rubber Grip RL | 1
+Tire Rubber Grip RR | 1
+VirtualKm FL | 1
+VirtualKm FR | 1
+VirtualKm RL | 1
+VirtualKm RR | 1
+Car Damage Front | 1
+Car Damage Right | 1
+Car Damage Rear | 1
+Car Damage Left | 1
+Tyres Compound | 1
+Race Positon | 1
+Engine Life Left | 1
+Gearbox Damage | 1
+Oil Temperature | 1
+Water Temperature | 1
+Car Pos Norm | 10
+Clutch Pos | 10
+Num Tires Off Track | 10
+DRS Available | 10
+DRS Active | 10
+ERS Is Charging | 10
+KERS Charge | 10
+KERS Deployed Energy | 10
+KERS Input | 10
+Turbo Boost | 10
+Relative Plank Wear	| 10
+Mark | 10
+Tire Dirt Level FL | 10
+Tire Dirt Level FR | 10
+Tire Dirt Level RL | 10
+Tire Dirt Level RR | 10
+Tire Temp Core FL | 10
+Tire Temp Core FR | 10
+Tire Temp Core RL | 10
+Tire Temp Core RR | 10
+Tire Temp Inner FL | 10
+Tire Temp Inner FR | 10
+Tire Temp Inner RL | 10
+Tire Temp Inner RR | 10
+Tire Temp Middle FL | 10
+Tire Temp Middle FR | 10
+Tire Temp Middle RL | 10
+Tire Temp Middle RR | 10
+Tire Temp Outer FL | 10
+Tire Temp Outer FR | 10
+Tire Temp Outer RL | 10
+Tire Temp Outer RR | 10
+Tire Grain FL | 10
+Tire Grain FR | 10
+Tire Grain RL | 10
+Tire Grain RR | 10
+Tire Blister FL | 10
+Tire Blister FR | 10
+Tire Blister RL | 10
+Tire Blister RR | 10
+Brake Temp FL | 10
+Brake Temp FR | 10
+Brake Temp RL | 10
+Brake Temp RR | 10
+Drivetrain Torque | 10
+Drivetrain Power | 10
+Car Heading | 10
+ABS Active | 20
+TC Active | 20
+Ground Speed | 20
+Lap Time | 20
+Lap Distance | 20
+Lap Number | 20
+Throttle Pos | 20
+Brake Pos | 20
+Handbrake Pos | 20
+Steering Angle | 20
+Gear | 20
+Engine RPM | 20
+Steering Torque | 20
+Camber FL | 20
+Camber FR | 20
+Camber RL | 20
+Camber RR | 20
+Toe In FL | 20
+Toe In FR | 20
+Toe In RL | 20
+Toe In RR | 20
+Brake Torque FL | 20
+Brake Torque FR | 20
+Brake Torque RL | 20
+Brake Torque RR | 20
+ndSlip FL | 20
+ndSlip FR | 20
+ndSlip RL | 20
+ndSlip RR | 20
+Session Time Left | 30
+Wheel Angular Speed FL | 30
+Wheel Angular Speed FR | 30
+Wheel Angular Speed RL | 30
+Wheel Angular Speed RR | 30
+Car Coord X | 30
+Car Coord Y | 30
+Car Coord Z | 30
+CG Accel Lateral | 30
+CG Accel Longitudinal | 30
+CG Accel Vertical | 30
+Drive Train Speed | 30
+Chassis Velocity X | 30
+Chassis Velocity Y | 30
+Chassis Velocity Z | 30
+Chassis Pitch Rate | 30
+Chassis Pitch Angle | 30
+Chassis Roll Rate | 30
+Chassis Roll Angle | 30
+Chassis Yaw Rate | 30
+CG Height | 30
+Suspension Travel FL | 30
+Suspension Travel FR | 30
+Suspension Travel RL | 30
+Suspension Travel RR | 30
+Ride Height Front | 30
+Ride Height Rear | 30
+Tire Load FL | 30
+Tire Load FR | 30
+Tire Load RL | 30
+Tire Load RR | 30
+Tire Loaded Radius FL | 30
+Tire Loaded Radius FR | 30
+Tire Loaded Radius RL | 30
+Tire Loaded Radius RR | 30
+Tire Slip Angle FL | 30
+Tire Slip Angle FR | 30
+Tire Slip Angle RL | 30
+Tire Slip Angle RR | 30
+Tire Slip Ratio FL | 30
+Tire Slip Ratio FR | 30
+Tire Slip Ratio RL | 30
+Tire Slip Ratio RR | 30
+Self Align Torque FL | 30
+Self Align Torque FR | 30
+Self Align Torque RL | 30
+Self Align Torque RR | 30
+Tire Long Fx FL | 30
+Tire Long Fx FR | 30
+Tire Long Fx RL | 30
+Tire Long Fx RR | 30
+Tire Lat Fy FL | 30
+Tire Lat Fy FR | 30
+Tire Lat Fy RL | 30
+Tire Lat Fy RR | 30
+UTC Time | 30
