@@ -3,30 +3,33 @@ from unittest import case
 # from dash import Dash, dcc, html, Input, Output, callback
 import dash
 import dash_mantine_components as dmc
+import dash_bootstrap_components as dbc
 
 from coordinates_handler import Origin, plot_track_map
 from data_container import DataContainer
 from selection import Selection
 
 
-class MainApp:
-    def __init__(self):
-        self.dash_app = dash.Dash(__name__)
-        self.dash_app.layout = dash.html.Div([
+def setup_main_application() -> dash.Dash:
+    app = dash.Dash(__name__, external_stylesheets=[dbc.themes.SUPERHERO])
+    app.layout = dash.html.Div([
                 dash.html.H1('Télémétrie'),
-                dash.dcc.Tabs(id="analysis_tabs", value='session', children=[
-                    dash.dcc.Tab(label='Classement', value='rankings'),
-                    dash.dcc.Tab(label='Session entière', value='session'),
-                    dash.dcc.Tab(label='Tour par tour', value='lap'),
-                ]),
-                dash.html.Div(id='analysis_page')
-            ])
-        self.data_selection: list[Selection] = []
+                dbc.Tabs(id="analysis_tabs", active_tab='rankings', children=[
+                    dbc.Tab(label='Classement', tab_id='rankings'),
+                    dbc.Tab(label='Session entière', tab_id='session'),
+                    dbc.Tab(label='Tour par tour', tab_id='lap'),
+                    ]),
+                dash.html.Div(id='analysis_page'),
+                dash.html.Output(id='debug_output', children='test'),
+                ])
+    return app
 
 
-@dash.callback(dash.Output('analysis_page', 'children'),
-                dash.Input('analysis_tabs', 'value'))
+@dash.callback([dash.Output('analysis_page', 'children'),
+                        dash.Output('debug_output', 'children')],
+                dash.Input('analysis_tabs', 'active_tab'))
 def render_analysis(selected_tab):
+    output = selected_tab
     match selected_tab:
         case 'rankings':
             sub_page = dash.html.Div([
@@ -42,10 +45,10 @@ def render_analysis(selected_tab):
             ])
         case _:
             sub_page = dash.html.Div([])
-    return sub_page
+    return sub_page, output
 
 
 
 if __name__ == '__main__':
-    main_app = MainApp()
-    main_app.dash_app.run(debug=True)
+    main_app = setup_main_application()
+    main_app.run(debug=True)
