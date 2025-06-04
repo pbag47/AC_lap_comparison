@@ -1,4 +1,4 @@
-Channel |   Sample rate (Hz)
+Channel |   Sample rate (Hz), Default: 30
 time    | 30
 Last Sector Time | 1
 Fuel Level | 1

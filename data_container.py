@@ -6,7 +6,12 @@ import re
 import numpy
 
 from itertools import groupby
+from typing import Literal
+
 from coordinates_handler import Origin, plot_track_map
+
+
+DEFAULT_SAMPLE_RATE = 30
 
 
 plotly.io.renderers.default = 'browser'
@@ -82,22 +87,24 @@ class InfoContainer:
 
 
 class DataField:
-    def __init__(self, title: str, unit: str, values_str: list[str], sample_rate: int = 1):
+    def __init__(self, title: str, unit: str, values_str: list[str], sample_rate: dict | None = None):
         self.title: str = title
         self.unit: str = unit
         self.indices: numpy.ndarray = numpy.ndarray(())
         self.values: numpy.ndarray = numpy.ndarray(())
-        self.sample_rate: int = sample_rate
+        self.sample_rate: dict | None = sample_rate
         self.get_indices(values_str)
 
     def get_indices(self, values_str: list[str]):
         values_list = []
         indices_list = []
+        counter = 0
         for i in range(len(values_str)):
             try:
                 value = json.decoder.JSONDecoder().decode(values_str[i])
-                indices_list.append(i)
+                indices_list.append(counter)
                 values_list.append(value)
+                counter += 1
             except json.decoder.JSONDecodeError:
                 pass
         filtered_values_list = []
@@ -111,12 +118,26 @@ class DataField:
         self.values = numpy.array(filtered_values_list)
         self.indices = numpy.array(filtered_indices_list)
 
-    def __getitem__(self, requested_index):
-        closest_available_index = numpy.searchsorted(self.indices, requested_index, side="left")
-        return self.values[closest_available_index]
+    def __getitem__(self, requested_index: tuple[int | slice, Literal['current', 'default']]):
+        if self.sample_rate is None:
+            raise ValueError('Sample rate has not been set')
+        indices, mode = requested_index
+        match mode:
+            case 'current':
+                closest_available_indices = numpy.searchsorted(self.indices, indices, side="left")
+                output = self.values[closest_available_indices]
+            case 'default':
+                corrected_indices = numpy.floor(requested_index * self.sample_rate['current'] / self.sample_rate['default']).astype(int)
+                closest_available_indices = numpy.searchsorted(self.indices, corrected_indices, side="left")
+                output = self.values[closest_available_indices]
+            case _:
+                raise ValueError(f'Invalid indexing mode. Specify "current" for {self.sample_rate['current']}Hz-based indexing, or "default" for {self.sample_rate["default"]}Hz-based indexing')
+        return output
 
     def __str__(self):
-        return f"{self.title}: [{len(self.values)} values @ {self.sample_rate}Hz], {self.unit}"
+        if self.sample_rate is None:
+            return f"{self.title}: [{len(self.values)} values @ undefined sample rate], {self.unit}"
+        return f"{self.title}: [{len(self.values)} values @ {self.sample_rate['current']}Hz], {self.unit}"
 
 
 class DataContainer:
@@ -140,8 +161,12 @@ class DataContainer:
             setattr(self, attribute_name, DataField(title, unit, value_column))
 
     def set_sample_rates(self, config_file_name: str = 'config/sample_rates.txt'):
+        decoder = json.decoder.JSONDecoder()
         with open(config_file_name, 'r') as file:
-            _ = file.readline()
+            header = file.readline()
+            channel_header, sample_rate_header = header.split('|')
+            sample_rate_header_text, default_sample_rate_str = sample_rate_header.split(':')
+            default_sample_rate = decoder.decode(default_sample_rate_str)
             for line in file.readlines():
                 title, sample_rate_str = line.split('|')
                 title = title.rstrip()
@@ -149,17 +174,16 @@ class DataContainer:
                 attribute_list = [(name, field) for name, field in vars(self).items() if field.title == title]
                 attribute_name = attribute_list[0][0]
                 attribute = attribute_list[0][1]
-                attribute.sample_rate = json.decoder.JSONDecoder().decode(sample_rate_str)
+                attribute.sample_rate = dict(default=default_sample_rate,
+                                             current=decoder.decode(sample_rate_str))
                 setattr(self, attribute_name, attribute)
 
     def get_time_scales(self) -> dict:
         time_scales = {}
-        sample_rates = numpy.unique([field.sample_rate for _, field in vars(self).items()])
+        sample_rates = numpy.unique([field.sample_rate['current'] for _, field in vars(self).items()])
         max_time = self.time.values[-1]
-        print(max_time)
         for sample_rate in sample_rates:
             time_scales[sample_rate] = numpy.arange(start=0, stop=max_time, step=1/sample_rate)
-            print(len(time_scales[sample_rate]))
         return time_scales
 
     @staticmethod
@@ -238,53 +262,31 @@ def plot_trajectory(data: DataContainer, figure):
 
 
 def get_sector_times(data: DataContainer, time_scales: dict) -> numpy.ndarray:
-    sample_rate = data.last_sector_time.sample_rate
-    sector_time_indices = numpy.floor(data.last_sector_time.indices * sample_rate / data.time.sample_rate).astype(int)
-    car_pos_norm_indices = numpy.floor(data.last_sector_time.indices * sample_rate / data.car_pos_norm.sample_rate).astype(int)
-    output_array = numpy.array([data.last_sector_time.indices, time_scales[sample_rate][sector_time_indices], data.car_pos_norm[car_pos_norm_indices], data.last_sector_time.values])
+    current_indices = data.last_sector_time.indices
+    time_values = time_scales[data.last_sector_time.sample_rate['current']][current_indices]
+    sector_times = data.last_sector_time.values
+    output_array = numpy.array([current_indices, time_values, sector_times])
     return output_array
 
 
 def plot_sector_times(sector_times_array: numpy.ndarray, time_scales, figure: plotly.graph_objects.Figure):
     figure.add_trace(plotly.graph_objects.Scatter(x=sector_times_array[1, [i for i in range(sector_times_array.shape[1]) if i % 3 == 0]],
-                                                  y=sector_times_array[3, [i for i in range(sector_times_array.shape[1]) if i % 3 == 0]],
+                                                  y=sector_times_array[2, [i for i in range(sector_times_array.shape[1]) if i % 3 == 0]],
                                                   name='Sector times 1, local time scale',
                                                   showlegend=True,
                                                   line=dict(shape='hv')
                                                   ),
                      )
     figure.add_trace(plotly.graph_objects.Scatter(x=sector_times_array[1, [i for i in range(sector_times_array.shape[1]) if i % 3 == 1]],
-                                                  y=sector_times_array[3, [i for i in range(sector_times_array.shape[1]) if i % 3 == 1]],
+                                                  y=sector_times_array[2, [i for i in range(sector_times_array.shape[1]) if i % 3 == 1]],
                                                   name='Sector times 2, local time scale',
                                                   showlegend=True,
                                                   line=dict(shape='hv')
                                                   ),
                      )
     figure.add_trace(plotly.graph_objects.Scatter(x=sector_times_array[1, [i for i in range(sector_times_array.shape[1]) if i % 3 == 2]],
-                                                  y=sector_times_array[3, [i for i in range(sector_times_array.shape[1]) if i % 3 == 2]],
+                                                  y=sector_times_array[2, [i for i in range(sector_times_array.shape[1]) if i % 3 == 2]],
                                                   name='Sector times 3, local time scale',
-                                                  showlegend=True,
-                                                  line=dict(shape='hv')
-                                                  ),
-                     )
-
-    figure.add_trace(plotly.graph_objects.Scatter(x=time_scales[30][sector_times_array[0, [i for i in range(sector_times_array.shape[1]) if i % 3 == 0]].astype(int)],
-                                                  y=sector_times_array[3, [i for i in range(sector_times_array.shape[1]) if i % 3 == 0]],
-                                                  name='Sector times 1, global time scale',
-                                                  showlegend=True,
-                                                  line=dict(shape='hv')
-                                                  ),
-                     )
-    figure.add_trace(plotly.graph_objects.Scatter(x=time_scales[30][sector_times_array[0, [i for i in range(sector_times_array.shape[1]) if i % 3 == 1]].astype(int)],
-                                                  y=sector_times_array[3, [i for i in range(sector_times_array.shape[1]) if i % 3 == 1]],
-                                                  name='Sector times 2, global time scale',
-                                                  showlegend=True,
-                                                  line=dict(shape='hv')
-                                                  ),
-                     )
-    figure.add_trace(plotly.graph_objects.Scatter(x=time_scales[30][sector_times_array[0, [i for i in range(sector_times_array.shape[1]) if i % 3 == 2]].astype(int)],
-                                                  y=sector_times_array[3, [i for i in range(sector_times_array.shape[1]) if i % 3 == 2]],
-                                                  name='Sector times 3, global time scale',
                                                   showlegend=True,
                                                   line=dict(shape='hv')
                                                   ),
@@ -311,10 +313,10 @@ if __name__ == '__main__':
     data_time_scales = data_container.get_time_scales()
     print(data_container)
     fig = plotly.graph_objects.Figure()
-    # plot_track_map(fig)
-    # plot_trajectory(data_container, fig)
+    # # plot_track_map(fig)
+    # # plot_trajectory(data_container, fig)
     sector_times = get_sector_times(data_container, time_scales=data_time_scales)
     plot_sector_times(sector_times, data_time_scales, fig)
-    # plot_lap_times(data_container, fig)
-
+    # # plot_lap_times(data_container, fig)
+    #
     fig.show()
