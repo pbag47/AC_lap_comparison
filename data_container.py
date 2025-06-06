@@ -164,6 +164,9 @@ class DataContainer:
     def get_channel_titles(self):
         return [channel.title for _, channel in vars(self).items()]
 
+    def get_title_name_pairs(self):
+        return [dict(label=channel.title, value=name) for name, channel in vars(self).items()]
+
     def set_sample_rates(self, config_file_name: str = 'config/sample_rates.txt'):
         decoder = json.decoder.JSONDecoder()
         with open(config_file_name, 'r') as file:
@@ -187,7 +190,7 @@ class DataContainer:
         sample_rates = numpy.unique([field.sample_rate['current'] for _, field in vars(self).items()])
         max_time = self.time.values[-1]
         for sample_rate in sample_rates:
-            time_scales[sample_rate] = numpy.arange(start=0, stop=max_time, step=1/sample_rate)
+            time_scales[sample_rate] = numpy.arange(start=0, stop=max_time+0.1, step=1/sample_rate)
         return time_scales
 
     @staticmethod
