@@ -5,11 +5,18 @@ import dash_bootstrap_components as dbc
 from dash_bootstrap_templates import load_figure_template
 
 from coordinates_handler import Origin, plot_track_map
-from data_container import DataContainer
+from data_container import DataContainer, main, general_time_plot, general_xy_plot
 from selection import Selection
+from pages.session_page import get_session_page
 
 
 load_figure_template('SUPERHERO')
+
+source_file = 'data/corvette_c7_laguna_seca_example.csv'
+h, info_container, data_container = main(source_file)
+Origin.setup("config/reference_points.txt")
+data_container.set_sample_rates()
+data_time_scales = data_container.get_time_scales()
 
 
 def setup_main_application() -> dash.Dash:
@@ -34,11 +41,11 @@ def render_analysis(selected_tab):
     output = selected_tab
     match selected_tab:
         case 'rankings':
-            sub_page = dash.html.Div([dash.html.H3('rankings')])
+            sub_page = dash.html.Div([dash.html.H3('Rankings')])
         case 'session':
-            sub_page = dash.html.Div([dash.html.H3('session')])
+            sub_page = get_session_page(data_container, data_time_scales)
         case 'lap':
-            sub_page = dash.html.Div([dash.html.H3('lap')])
+            sub_page = dash.html.Div([dash.html.H3('Lap')])
         case _:
             sub_page = dash.html.Div([])
     return sub_page, output
