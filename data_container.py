@@ -125,9 +125,8 @@ class DataField:
             raise ValueError('Sample rate has not been set')
         indices, sample_rate_of_input_indices = requested_index
         corrected_indices = self.convert_indices(indices, sample_rate_of_input_indices, self.sample_rate['current'])
-        closest_available_indices = numpy.searchsorted(self.indices, corrected_indices, side="left")
-        closest_available_indices = numpy.unique(closest_available_indices[closest_available_indices < len(self.values)])
-        return self.values[closest_available_indices]
+        closest_available_indices = numpy.searchsorted(self.indices, corrected_indices, side="right")
+        return self.values[closest_available_indices-1]
 
     def __str__(self):
         if self.sample_rate is None:
@@ -357,8 +356,32 @@ def plot_car_pos_norm_vs_lap_distance(data: DataContainer, time_scales):
     figure.show()
 
 
-def get_lap_times(data):
-    pass
+def general_xy_plot(data, x_channel_name, y_channel_name):
+    figure = plotly.graph_objects.Figure()
+    x_axis_data = getattr(data, x_channel_name)
+    y_axis_data = getattr(data, y_channel_name)
+    x_axis_time_indices = x_axis_data.convert_indices(x_axis_data.indices,
+                                                      x_axis_data.sample_rate['current'],
+                                                      x_axis_data.sample_rate['default'])
+    y_axis_time_indices = y_axis_data.convert_indices(y_axis_data.indices,
+                                                      y_axis_data.sample_rate['current'],
+                                                      y_axis_data.sample_rate['default'])
+    indices = numpy.union1d(x_axis_time_indices, y_axis_time_indices)
+    x_values = x_axis_data[(indices, x_axis_data.sample_rate['default'])]
+    y_values = y_axis_data[(indices, y_axis_data.sample_rate['default'])]
+    figure.add_trace(plotly.graph_objects.Scatter(x=x_values,
+                                                  y=y_values,
+                                                  name=f'{y_axis_data.title} vs {x_axis_data.title}',
+                                                  showlegend=True,
+                                                  line=dict(shape='hv')
+                                                  ),
+                     )
+    figure.show()
+
+
+
+# def get_lap_times(data):
+#     pass
 
     # figure.add_trace(plotly.graph_objects.Scatter(x=[i for i in range(len(data.lap_time.values))],
     #                                               y=data.lap_time.values,
@@ -366,19 +389,19 @@ def get_lap_times(data):
     #                  )
 
 
-def debug():
-    source_file = 'data/corvette_c7_laguna_seca_example.csv'
-    # source_file = 'data/gps_calibration.csv'
-    # source_file = 'data/turn_in_out_calibration.csv'
-    h, info_container, data_container = main(source_file)
-    # print(info_container)
-    Origin.setup("config/reference_points.txt")
-    data_container.set_sample_rates()
-    data_time_scales = data_container.get_time_scales()
-    print(data_container)
-    plot_car_pos_norm_vs_lap_distance(data_container, data_time_scales)
-
-    return data_container, data_time_scales
+# def debug():
+#     source_file = 'data/corvette_c7_laguna_seca_example.csv'
+#     # source_file = 'data/gps_calibration.csv'
+#     # source_file = 'data/turn_in_out_calibration.csv'
+#     h, info_container, data_container = main(source_file)
+#     # print(info_container)
+#     Origin.setup("config/reference_points.txt")
+#     data_container.set_sample_rates()
+#     data_time_scales = data_container.get_time_scales()
+#     print(data_container)
+#     plot_car_pos_norm_vs_lap_distance(data_container, data_time_scales)
+#
+#     return data_container, data_time_scales
 
 
 if __name__ == '__main__':
@@ -391,7 +414,8 @@ if __name__ == '__main__':
     data_container.set_sample_rates()
     data_time_scales = data_container.get_time_scales()
     print(data_container)
-    plot_car_pos_norm_vs_lap_distance(data_container, data_time_scales)
+    # plot_car_pos_norm_vs_lap_distance(data_container, data_time_scales)
+    general_xy_plot(data_container, x_channel_name='tire_pressure_fl', y_channel_name='tire_temp_middle_fl')
     # fig = plotly.graph_objects.Figure()
     # # plot_track_map(fig)
     # # plot_trajectory(data_container, fig)
