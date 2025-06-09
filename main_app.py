@@ -1,10 +1,11 @@
 import dash
 import dash_bootstrap_components as dbc
+import dash_daq as daq
 import plotly
 import plotly.graph_objects
 from dash_bootstrap_templates import load_figure_template
 
-from coordinates_handler import Origin
+from coordinates_handler import Origin, get_sections_from_ini_file
 from data_container import main, general_time_plot, general_xy_plot
 # from selection import Selection
 
@@ -16,6 +17,7 @@ h, info_container, data = main(source_file)
 Origin.setup("config/reference_points.txt")
 data.set_sample_rates()
 time_scales = data.get_time_scales()
+sections = get_sections_from_ini_file()
 
 
 def setup_main_application() -> dash.Dash:
@@ -46,6 +48,153 @@ def setup_main_application() -> dash.Dash:
         className='dbc dbc-ag-grid',
     )
     return app
+
+
+def get_lap_analysis_page() -> dash.html.Div:
+    section_names = ["s1", "s2", "s3"]
+    figure_track_map = plotly.graph_objects.Figure()
+    figure_throttle_brake = plotly.graph_objects.Figure()
+    figure_gg_graph = plotly.graph_objects.Figure()
+    figure_gg_graph.update_layout(
+        height=175,
+        width=175,
+        margin=dict(l=10, r=10, t=10, b=10),
+        )
+    options = [dict(label="Tour complet", value="full_lap")]
+    sections = get_sections_from_ini_file()
+    for section in sections:
+        options.append(dict(label=section.title, value=section.title))
+    output = dash.html.Div(
+        [
+            dash.html.H3('Analyse tour-par-tour'),
+            dash.dcc.Dropdown(
+                options=options,
+                id='dropdown-sector_selection',
+                maxHeight=400,
+                placeholder="Sélectionner un secteur",
+            ),
+            dash.dcc.Slider(
+                id='slider-time-scale',
+                min=0,
+                max=1,
+                value=0,
+                ),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dash.dcc.Graph(
+                                figure=figure_track_map,
+                                id='graph-track_map',
+                                ),
+                        ],
+                        width=6,
+                        ),
+                    dbc.Col(
+                        [
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        [
+                                            daq.GraduatedBar(
+                                                id='bar-throttle',
+                                                vertical=True,
+                                                min=0,
+                                                max=100,
+                                                value=25,
+                                                showCurrentValue=True,
+                                                label='Throttle',
+                                                color='green',
+                                                ),
+                                        ]),
+                                    dbc.Col(
+                                        [
+                                            daq.GraduatedBar(
+                                                id='bar-brake',
+                                                vertical=True,
+                                                min=0,
+                                                max=100,
+                                                value=25,
+                                                showCurrentValue=True,
+                                                label='Brake',
+                                                color='red'
+                                                ),
+                                        ]),
+                                    dbc.Col(
+                                        [
+                                            daq.GraduatedBar(
+                                                id='bar-clutch',
+                                                vertical=True,
+                                                min=0,
+                                                max=100,
+                                                value=25,
+                                                showCurrentValue=True,
+                                                label='Clutch',
+                                                color="#9B51E0",
+                                                ),
+                                        ]),
+                                ]),
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        [
+                                            daq.LEDDisplay(
+                                                id='LED-gear',
+                                                label='GEAR',
+                                                value=0,
+                                                ),
+                                        ]),
+                                    dbc.Col(
+                                        [
+                                            dash.dcc.Graph(
+                                                figure=figure_gg_graph,
+                                                id='graph-gg-display',
+                                                ),
+                                        ]),
+                                ]),
+                        ],
+                        width=3,
+                        ),
+                    
+                                            
+##                                    dbc.Col(
+##                                        [
+##                                            daq.Gauge(
+##                                                id='gauge-speed',
+##                                                color='orange',  # "#9B51E0",
+##                                                scale=dict(
+##                                                    start=0,
+##                                                    interval=10,
+##                                                    labelInterval=4),
+##                                                showCurrentValue=True,
+##                                                units='km/h',
+##                                                label='Speed',
+##                                                min=0,
+##                                                max=220,
+##                                                value=100,
+##                                                digits=0,
+##                                                size=104,
+##                                                ),
+##                                        ],
+##                                        width=2,
+##                                        ),
+##                                ]),
+##                        ],
+##                        width=3,
+##                        ),
+##                    dbc.Col(
+##                        [],
+##                        width=3,
+##                        )
+                ]),
+            dash.dcc.Graph(
+                figure=figure_throttle_brake,
+                id='graph-throttle-brake-display',
+                ),
+        ],
+        className='dbc dbc-ag-grid',
+    )
+    return output
 
 
 def get_free_display_page() -> dash.html.Div:
@@ -97,7 +246,7 @@ def render_analysis(selected_tab):
         case 'tab-session':
             sub_page = dash.html.Div([dash.html.H3('Session')])
         case 'tab-lap':
-            sub_page = dash.html.Div([dash.html.H3('Lap')])
+            sub_page = get_lap_analysis_page()
         case 'tab-free':
             sub_page = get_free_display_page()
         case _:
