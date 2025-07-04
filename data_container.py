@@ -216,6 +216,21 @@ class DataContainer:
         return output_str
 
 
+class Lap:
+    def __init__(self):
+        self.number: int = 0
+        self.driver: str = '_-Driver-_'
+        self.lap_time: float = 0.0  # (s)
+        self.is_valid: bool = True
+        self.sectors: list[Sector] = []
+
+
+class Sector:
+    def __init__(self):
+        self.number: int = 0
+        self.sector_time: float = 0.0
+
+
 def main(data_file: str):
     with open(data_file, 'r') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
@@ -442,17 +457,18 @@ if __name__ == '__main__':
     data_container.set_sample_rates()
     data_time_scales = data_container.get_time_scales()
     print(data_container)
+    print(get_sector_times(data_container, data_time_scales))
     # plot_car_pos_norm_vs_lap_distance(data_container, data_time_scales)
-    fig = plotly.graph_objects.Figure()
+    # fig = plotly.graph_objects.Figure()
     # general_xy_plot(fig, data_container, x_channel_name='lap_distance', y_channel_name='tire_temp_middle_fl')
     # general_time_plot(fig, data_container, data_time_scales, 'tire_temp_inner_fl')
     # general_time_plot(fig, data_container, data_time_scales, 'tire_temp_middle_fl')
     # general_time_plot(fig, data_container, data_time_scales, 'tire_temp_outer_fl')
 
     # # plot_track_map(fig)
-    plot_trajectory(data_container, fig)
+    # plot_trajectory(data_container, fig)
     # sector_times = get_sector_times(data_container, time_scales=data_time_scales)
     # plot_sector_times(sector_times, fig)
-    # # plot_lap_times(data_container, fig)
+    # plot_lap_times(data_container, fig)
     #
-    fig.show()
+    # fig.show()

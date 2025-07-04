@@ -108,21 +108,6 @@ class Section:
         # figure.update_layout(template="plotly_dark")
 
 
-class Lap:
-    def __init__(self):
-        self.number: int = 0
-        self.driver: str = '_-Driver-_'
-        self.lap_time: float = 0.0  # (s)
-        self.is_valid: bool = True
-        self.sectors: list[Sector] = []
-
-
-class Sector:
-    def __init__(self):
-        self.number: int = 0
-        self.sector_time: float = 0.0
-
-
 def cartesian_distance(p1: Coordinates, p2: Coordinates):
     return sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2 + (p1.z - p2.z)**2)
 
