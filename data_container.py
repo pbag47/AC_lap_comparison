@@ -1,4 +1,5 @@
 import csv
+import datetime
 import json
 import plotly
 import plotly.graph_objects
@@ -217,18 +218,37 @@ class DataContainer:
 
 
 class Lap:
-    def __init__(self):
-        self.number: int = 0
-        self.driver: str = '_-Driver-_'
+    class Sector:
+        def __init__(self,
+                     number: int,
+                     time: float,  # (s)
+                     ):
+            self.number: int = number
+            self.sector_time: float = time
+
+        def __str__(self) -> str:
+            return f"S{self.number:.0f}: {self.sector_time:.3f}"
+
+    def __init__(self,
+                 number: int = 0,
+                 driver: str = '_-driver-_',
+                 ):
+        self.number: int = number
+        self.driver: str = driver
         self.lap_time: float = 0.0  # (s)
-        self.is_valid: bool = True
-        self.sectors: list[Sector] = []
+        self.is_valid: bool = False
+        self.sectors: list[Lap.Sector] = []
 
+    def set_times(self, sector_times: 3*[float]):
+        self.sectors = [self.Sector(number=1, time=sector_times[0]),
+                        self.Sector(number=2, time=sector_times[1]),
+                        self.Sector(number=3, time=sector_times[2]),
+                        ]
+        self.lap_time = sum(sector_times)
 
-class Sector:
-    def __init__(self):
-        self.number: int = 0
-        self.sector_time: float = 0.0
+    def __str__(self) -> str:
+        minutes, seconds = divmod(self.lap_time, 60)
+        return f'{minutes:.0f}:{seconds:.3f}'
 
 
 def main(data_file: str):
@@ -283,14 +303,19 @@ def plot_trajectory(data: DataContainer, figure):
     figure.update_yaxes(scaleanchor="x", scaleratio=1)
 
 
-def get_sector_times(data: DataContainer, time_scales: dict) -> numpy.ndarray:
-    current_time_indices = data.last_sector_time.indices
-    local_time_values = time_scales[data.last_sector_time.sample_rate['current']][current_time_indices]
-    default_time_indices = data.last_sector_time.convert_indices(current_time_indices, data.last_sector_time.sample_rate['current'], data.last_sector_time.sample_rate['default'])
-    default_time_values = time_scales[data.last_sector_time.sample_rate['default']][default_time_indices]
-    sectors = data.last_sector_time.values
-    output_array = numpy.array([current_time_indices, local_time_values, default_time_values, sectors])
-    return output_array
+def get_laps(data: DataContainer, driver: str) -> list[Lap]:
+    number_of_sectors, _ = divmod(len(data.last_sector_time.values) - 1, 3)
+    number_of_laps, _ = divmod(number_of_sectors, 3)
+    laps = []
+    start_index = 3
+    step = 3
+    sectors_per_lap = 3
+    for lap_index in range(number_of_laps):
+        lap = Lap(number=lap_index, driver=driver)
+        sector_times = data.last_sector_time.values[slice(start_index + (step*sectors_per_lap*lap_index), start_index + (step*sectors_per_lap*(lap_index+1)), step)].tolist()
+        lap.set_times(sector_times)
+        laps.append(lap)
+    return laps
 
 
 def plot_sector_times(sector_times_array: numpy.ndarray, figure: plotly.graph_objects.Figure):
@@ -448,22 +473,25 @@ def debug():
 
 
 if __name__ == '__main__':
-    source_file = 'data/corvette_c7_laguna_seca_example.csv'
+    # source_file = 'data/corvette_c7_laguna_seca_example.csv'
+    source_file = 'data/04072025-204315-Chuck-ks_audi_a1s1-ks_laguna_seca.csv'
     # source_file = 'data/gps_calibration.csv'
     # source_file = 'data/turn_in_out_calibration.csv'
     h, info_container, data_container = main(source_file)
-    # print(info_container)
     Origin.setup("config/reference_points.txt")
     data_container.set_sample_rates()
     data_time_scales = data_container.get_time_scales()
+    print(h)
+    print(info_container)
     print(data_container)
-    print(get_sector_times(data_container, data_time_scales))
+    laps_list = get_laps(data_container, h['Driver'])
     # plot_car_pos_norm_vs_lap_distance(data_container, data_time_scales)
     # fig = plotly.graph_objects.Figure()
     # general_xy_plot(fig, data_container, x_channel_name='lap_distance', y_channel_name='tire_temp_middle_fl')
     # general_time_plot(fig, data_container, data_time_scales, 'tire_temp_inner_fl')
     # general_time_plot(fig, data_container, data_time_scales, 'tire_temp_middle_fl')
     # general_time_plot(fig, data_container, data_time_scales, 'tire_temp_outer_fl')
+    # general_time_plot(fig, data_container, data_time_scales, 'lap_time')
 
     # # plot_track_map(fig)
     # plot_trajectory(data_container, fig)
