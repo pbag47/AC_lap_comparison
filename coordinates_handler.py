@@ -101,8 +101,26 @@ class Section:
                 xanchor="left",
                 yanchor="bottom",
             )
+            figure.update_xaxes(range=[self.top_left.x, self.top_left.x + width])
+            figure.update_yaxes(range=[self.bottom_right.y, self.bottom_right.y + height])
         figure.update_yaxes(scaleanchor="x", scaleratio=1)
-        figure.update_layout(template="plotly_dark")
+
+        # figure.update_layout(template="plotly_dark")
+
+
+class Lap:
+    def __init__(self):
+        self.number: int = 0
+        self.driver: str = '_-Driver-_'
+        self.lap_time: float = 0.0  # (s)
+        self.is_valid: bool = True
+        self.sectors: list[Sector] = []
+
+
+class Sector:
+    def __init__(self):
+        self.number: int = 0
+        self.sector_time: float = 0.0
 
 
 def cartesian_distance(p1: Coordinates, p2: Coordinates):
@@ -271,8 +289,8 @@ if __name__ == '__main__':
     Origin.setup("config/reference_points.txt")
     fig = plotly.graph_objects.Figure()
 
-    track_sections = get_sections_from_ini_file()
-    for track_section in track_sections:
-        track_section.plot(fig)
-    # plot_track_map(fig)
+    # track_sections = get_sections_from_ini_file()
+    # for track_section in track_sections:
+    #     track_section.plot(fig)
+    plot_track_map(fig)
     fig.show()

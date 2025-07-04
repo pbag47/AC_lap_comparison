@@ -5,8 +5,8 @@ import plotly
 import plotly.graph_objects
 from dash_bootstrap_templates import load_figure_template
 
-from coordinates_handler import Origin, get_sections_from_ini_file
-from data_container import main, general_time_plot, general_xy_plot
+from coordinates_handler import Origin, get_sections_from_ini_file, plot_track_map
+from data_container import main, general_time_plot, general_xy_plot, plot_trajectory
 # from selection import Selection
 
 
@@ -51,7 +51,6 @@ def setup_main_application() -> dash.Dash:
 
 
 def get_lap_analysis_page() -> dash.html.Div:
-    section_names = ["s1", "s2", "s3"]
     figure_track_map = plotly.graph_objects.Figure()
     figure_throttle_brake = plotly.graph_objects.Figure()
     figure_gg_graph = plotly.graph_objects.Figure()
@@ -61,7 +60,6 @@ def get_lap_analysis_page() -> dash.html.Div:
         margin=dict(l=10, r=10, t=10, b=10),
         )
     options = [dict(label="Tour complet", value="full_lap")]
-    sections = get_sections_from_ini_file()
     for section in sections:
         options.append(dict(label=section.title, value=section.title))
     output = dash.html.Div(
@@ -277,6 +275,22 @@ def update_free_xy_graph(x_axis, y_axis):
     if x_axis is None or y_axis is None:
         return figure
     general_xy_plot(figure, data, x_axis, y_axis)
+    return figure
+
+@dash.callback(
+    dash.Output("graph-track_map", "figure"),
+    dash.Input("dropdown-sector_selection", "value"),
+    prevent_initial_call=True,
+)
+def update_track_map(value):
+    figure = plotly.graph_objects.Figure()
+    selected_sections = [section for section in sections if section.title == value]
+    if not selected_sections:
+        plot_trajectory(data, figure)
+    else:
+        for selected_section in selected_sections:
+            selected_section.plot(figure)
+        plot_trajectory(data, figure)
     return figure
 
 
