@@ -20,6 +20,24 @@ plotly.io.renderers.default = 'browser'
 plotly.io.templates.default = 'plotly_dark'
 
 
+class Container:
+    @staticmethod
+    def _get_attributes_names(titles: list[str]):
+        attributes_names = []
+        indices_to_delete = []
+        for i in range(len(titles)):
+            name = titles[i]
+            name = name.replace(' ', '_')
+            name = name.casefold()
+            name = re.sub('[^0-9a-z_]', '', name)
+            name = re.sub('^[^a-z_]+', '', name)
+            if not name:
+                indices_to_delete.append(i)
+                continue
+            attributes_names.append(name)
+        return attributes_names, indices_to_delete
+
+
 class InfoField:
     def __init__(self, title: str, unit: str, value: float | int | bool | str | None):
         self.title: str = title
@@ -30,7 +48,7 @@ class InfoField:
         return f"{self.title}: {self.value}{self.unit}"
 
 
-class InfoContainer:
+class InfoContainer(Container):
     def __init__(self, titles, units, values):
         attributes_names, indices_to_delete = self._get_attributes_names(titles)
         field_values = self._get_values(values)
@@ -53,22 +71,6 @@ class InfoContainer:
         for attribute_name, attribute_value in vars(self).items():
             output_str += f"\n\t{attribute_value}"
         return output_str
-
-    @staticmethod
-    def _get_attributes_names(titles: list[str]):
-        attributes_names = []
-        indices_to_delete = []
-        for i in range(len(titles)):
-            name = titles[i]
-            name = name.replace(' ', '_')
-            name = name.casefold()
-            name = re.sub('[^0-9a-z_]', '', name)
-            name = re.sub('^[^a-z_]+', '', name)
-            if not name:
-                indices_to_delete.append(i)
-                continue
-            attributes_names.append(name)
-        return attributes_names, indices_to_delete
 
     @staticmethod
     def _get_values(values: list[str]):
@@ -139,7 +141,7 @@ class DataField:
         return new_indices
 
 
-class DataContainer:
+class DataContainer(Container):
     def __init__(self, titles, units, values):
         attributes_names, indices_to_delete = self._get_attributes_names(titles)
         indices_to_delete.sort(reverse=True)
@@ -193,22 +195,6 @@ class DataContainer:
         for sample_rate in sample_rates:
             time_scales[sample_rate] = numpy.arange(start=0, stop=max_time+0.1, step=1/sample_rate)
         return time_scales
-
-    @staticmethod
-    def _get_attributes_names(titles: list[str]):
-        attributes_names = []
-        indices_to_delete = []
-        for i in range(len(titles)):
-            name = titles[i]
-            name = name.replace(' ', '_')
-            name = name.casefold()
-            name = re.sub('[^0-9a-z_]', '', name)
-            name = re.sub('^[^a-z_]+', '', name)
-            if not name:
-                indices_to_delete.append(i)
-                continue
-            attributes_names.append(name)
-        return attributes_names, indices_to_delete
 
     def __str__(self):
         output_str = 'DataContainer:'
@@ -485,6 +471,9 @@ if __name__ == '__main__':
     print(info_container)
     print(data_container)
     laps_list = get_laps(data_container, h['Driver'])
+    print([(lap.lap_time, lap.is_valid, lap.number) for lap in laps_list])
+
+    print(data_container.lap_invalidated)
     # plot_car_pos_norm_vs_lap_distance(data_container, data_time_scales)
     # fig = plotly.graph_objects.Figure()
     # general_xy_plot(fig, data_container, x_channel_name='lap_distance', y_channel_name='tire_temp_middle_fl')
