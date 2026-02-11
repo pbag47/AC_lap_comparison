@@ -193,7 +193,7 @@ class DataContainer(Container):
         sample_rates = numpy.unique([field.sample_rate['current'] for _, field in vars(self).items()])
         max_time = self.time.values[-1]
         for sample_rate in sample_rates:
-            time_scales[sample_rate] = numpy.arange(start=0, stop=max_time+0.1, step=1/sample_rate)
+            time_scales[sample_rate] = numpy.arange(start=0, stop=max_time+(1/(2*sample_rate)), step=1/sample_rate)
         return time_scales
 
     def __str__(self):
@@ -208,9 +208,13 @@ class Lap:
         def __init__(self,
                      number: int,
                      time: float,  # (s)
+                     start_time: float,  # (s)
+                     start_index: int,
                      ):
             self.number: int = number
             self.sector_time: float = time
+            self.start_time: float = start_time
+            self.start_index: int = start_index
 
         def __str__(self) -> str:
             return f"S{self.number:.0f}: {self.sector_time:.3f}"
@@ -218,18 +222,30 @@ class Lap:
     def __init__(self,
                  number: int = 0,
                  driver: str = '_-driver-_',
+                 start_time: float = 0,
+                 start_index: int = 0,
                  ):
         self.number: int = number
         self.driver: str = driver
         self.lap_time: float = 0.0  # (s)
         self.is_valid: bool = False
         self.sectors: list[Lap.Sector] = []
+        self.start_time: float = start_time
+        self.start_index: int = start_index
 
-    def set_times(self, sector_times: 3*[float]):
-        self.sectors = [self.Sector(number=1, time=sector_times[0]),
-                        self.Sector(number=2, time=sector_times[1]),
-                        self.Sector(number=3, time=sector_times[2]),
-                        ]
+    def set_times(self, sector_times: 3*[float], sector_start: 3*[float, int]):
+        self.sectors = []
+        for sector_number in range(3):
+            try:
+                sector = self.Sector(
+                    number=sector_number,
+                    time=sector_times[sector_number],
+                    start_time=sector_start[sector_number][0],
+                    start_index=sector_start[sector_number][1],
+                )
+            except IndexError:
+                sector = None
+            self.sectors.append(sector)
         self.lap_time = sum(sector_times)
 
     def __str__(self) -> str:
@@ -289,17 +305,35 @@ def plot_trajectory(data: DataContainer, figure):
     figure.update_yaxes(scaleanchor="x", scaleratio=1)
 
 
-def get_laps(data: DataContainer, driver: str) -> list[Lap]:
+def get_laps(data: DataContainer, time_scales, driver: str) -> list[Lap]:
     number_of_sectors, _ = divmod(len(data.last_sector_time.values) - 1, 3)
     number_of_laps, _ = divmod(number_of_sectors, 3)
     laps = []
     start_index = 3
     step = 3
     sectors_per_lap = 3
-    for lap_index in range(number_of_laps):
-        lap = Lap(number=lap_index, driver=driver)
-        sector_times = data.last_sector_time.values[slice(start_index + (step*sectors_per_lap*lap_index), start_index + (step*sectors_per_lap*(lap_index+1)), step)].tolist()
-        lap.set_times(sector_times)
+
+    lap_start_times = time_scales[data.lap_number.sample_rate['current']][data.lap_number.indices]
+    lap_numbers = data.lap_number.values
+
+    for i in range(len(lap_numbers)):
+        lap_number = lap_numbers[i]
+        lap = Lap(number=lap_number, driver=driver, start_time=lap_start_times[i], start_index=data.lap_number.indices[i])
+
+        sector_times_indices = slice(start_index + (step*sectors_per_lap*lap_number), start_index + (step*sectors_per_lap*(lap_number+1)), step)
+        sector_times = data.last_sector_time.values[sector_times_indices].tolist()
+        indices = data.last_sector_time.indices[sector_times_indices]
+        sector_start_times = time_scales[data.last_sector_time.sample_rate['current']][indices]
+        # print("lap", lap_number, "Sector times: ", sector_times, ", indices:", indices, ", start times: ", sector_start_times)
+
+        sector_start = []
+        for sector_number in range(sectors_per_lap):
+            try:
+                start = [sector_start_times[sector_number], data.last_sector_time.indices[sector_times_indices][sector_number]]
+                sector_start.append(start)
+            except IndexError:
+                pass
+        lap.set_times(sector_times, sector_start)
         laps.append(lap)
     return laps
 
@@ -434,15 +468,6 @@ def general_time_plot(figure: plotly.graph_objects.Figure,
                          yaxis=dict(title=f'{y_axis_data.title} ({y_axis_data.unit})',),)
 
 
-# def get_lap_times(data):
-#     pass
-
-    # figure.add_trace(plotly.graph_objects.Scatter(x=[i for i in range(len(data.lap_time.values))],
-    #                                               y=data.lap_time.values,
-    #                                               )
-    #                  )
-
-
 def debug():
     source_file = 'data/corvette_c7_laguna_seca_example.csv'
     # source_file = 'data/gps_calibration.csv'
@@ -454,7 +479,6 @@ def debug():
     data_time_scales = data_container.get_time_scales()
     print(data_container)
     plot_car_pos_norm_vs_lap_distance(data_container, data_time_scales)
-
     return data_container, data_time_scales
 
 
@@ -470,10 +494,11 @@ if __name__ == '__main__':
     print(h)
     print(info_container)
     print(data_container)
-    laps_list = get_laps(data_container, h['Driver'])
-    print([(lap.lap_time, lap.is_valid, lap.number) for lap in laps_list])
 
-    print(data_container.lap_invalidated)
+    laps_list = get_laps(data_container, data_time_scales, h['Driver'])
+
+    # print([(lap.lap_time, lap.is_valid, lap.number) for lap in laps_list])
+    # print(data_container.lap_invalidated)
     # plot_car_pos_norm_vs_lap_distance(data_container, data_time_scales)
     # fig = plotly.graph_objects.Figure()
     # general_xy_plot(fig, data_container, x_channel_name='lap_distance', y_channel_name='tire_temp_middle_fl')
