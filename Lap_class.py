@@ -1,5 +1,4 @@
 import json
-from unittest import case
 
 
 class SerializableObject:
@@ -67,6 +66,8 @@ class Lap(SerializableObject):
         self.is_valid: bool = False
         self.sectors: list[Sector] = []
         self.start_index: int = start_index
+
+        #TODO: self.is_valid logic
 
     def set_times(self, sector_times: 3*[float]):
         self.sectors = []

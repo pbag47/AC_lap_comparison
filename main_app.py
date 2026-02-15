@@ -5,9 +5,8 @@ import plotly
 import plotly.graph_objects
 from dash_bootstrap_templates import load_figure_template
 
-from coordinates_handler import Origin, get_sections_from_ini_file, plot_track_map
+from coordinates_handler import Origin, get_sections_from_ini_file
 from data_container import main, general_time_plot, general_xy_plot, plot_trajectory
-# from selection import Selection
 
 
 load_figure_template('SUPERHERO')

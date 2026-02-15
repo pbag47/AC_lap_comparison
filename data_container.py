@@ -1,5 +1,4 @@
 import csv
-import datetime
 import json
 import plotly
 import plotly.graph_objects
@@ -8,13 +7,7 @@ import plotly.subplots
 import re
 import numpy
 
-from itertools import groupby
-
-from coordinates_handler import Origin, plot_track_map
-from Lap_class import Lap
-
-
-DEFAULT_SAMPLE_RATE = 30
+from coordinates_handler import Origin
 
 
 plotly.io.renderers.default = 'browser'
@@ -112,16 +105,6 @@ class DataField:
                 counter += 1
             except json.decoder.JSONDecodeError:
                 pass
-        filtered_values_list = []
-        filtered_indices_list = []
-        counter = 0
-        for value, group in groupby(values_list):
-            filtered_values_list.append(value)
-            filtered_indices_list.append(indices_list[counter])
-            number_of_repetitions = len(list(group))
-            counter += number_of_repetitions
-        # self.values = numpy.array(filtered_values_list)
-        # self.indices = numpy.array(filtered_indices_list)
         self.values = numpy.array(values_list)
         self.indices = numpy.array(indices_list)
 
@@ -167,17 +150,8 @@ class DataContainer(Container):
         for attribute_name, title, unit, value_column in zip(attributes_names, titles, units, values):
             setattr(self, attribute_name, DataField(title, unit, value_column))
 
-    def get_channel_names(self) -> list[str]:
-        return [key for key in vars(self).keys()]
-
-    def get_channel_titles(self):
-        return [channel.title for _, channel in vars(self).items()]
-
     def get_channels_dict(self) -> dict[str: DataField]:
         return vars(self)
-
-    def get_number_of_values(self) -> int:
-        return len(self.time.values)
 
     def get_title_name_pairs(self):
         return [dict(label=channel.title, value=name) for name, channel in vars(self).items()]
@@ -201,6 +175,7 @@ class DataContainer(Container):
                 setattr(self, attribute_name, attribute)
 
     def get_time_scales(self) -> dict:
+        # TODO: Remove
         time_scales = {}
         sample_rates = numpy.unique([field.sample_rate['current'] for _, field in vars(self).items()])
         max_time = self.time.values[-1]
@@ -436,7 +411,6 @@ if __name__ == '__main__':
     print(info_container)
     print(data_container)
 
-    laps_list = get_laps(data_container, data_time_scales, h['Driver'])
 
     # print([(lap.lap_time, lap.is_valid, lap.number) for lap in laps_list])
     # print(data_container.lap_invalidated)
