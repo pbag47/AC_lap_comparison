@@ -11,6 +11,7 @@ import numpy
 from itertools import groupby
 
 from coordinates_handler import Origin, plot_track_map
+from Lap_class import Lap
 
 
 DEFAULT_SAMPLE_RATE = 30
@@ -119,8 +120,13 @@ class DataField:
             filtered_indices_list.append(indices_list[counter])
             number_of_repetitions = len(list(group))
             counter += number_of_repetitions
-        self.values = numpy.array(filtered_values_list)
-        self.indices = numpy.array(filtered_indices_list)
+        # self.values = numpy.array(filtered_values_list)
+        # self.indices = numpy.array(filtered_indices_list)
+        self.values = numpy.array(values_list)
+        self.indices = numpy.array(indices_list)
+
+    def get_sample_rate(self):
+        return self.sample_rate["current"]
 
     def __getitem__(self, requested_index: tuple[int | slice, int]):
         if self.sample_rate is None:
@@ -161,11 +167,17 @@ class DataContainer(Container):
         for attribute_name, title, unit, value_column in zip(attributes_names, titles, units, values):
             setattr(self, attribute_name, DataField(title, unit, value_column))
 
-    def get_channel_names(self):
+    def get_channel_names(self) -> list[str]:
         return [key for key in vars(self).keys()]
 
     def get_channel_titles(self):
         return [channel.title for _, channel in vars(self).items()]
+
+    def get_channels_dict(self) -> dict[str: DataField]:
+        return vars(self)
+
+    def get_number_of_values(self) -> int:
+        return len(self.time.values)
 
     def get_title_name_pairs(self):
         return [dict(label=channel.title, value=name) for name, channel in vars(self).items()]
@@ -203,54 +215,16 @@ class DataContainer(Container):
         return output_str
 
 
-class Lap:
-    class Sector:
-        def __init__(self,
-                     number: int,
-                     time: float,  # (s)
-                     start_time: float,  # (s)
-                     start_index: int,
-                     ):
-            self.number: int = number
-            self.sector_time: float = time
-            self.start_time: float = start_time
-            self.start_index: int = start_index
 
-        def __str__(self) -> str:
-            return f"S{self.number:.0f}: {self.sector_time:.3f}"
 
-    def __init__(self,
-                 number: int = 0,
-                 driver: str = '_-driver-_',
-                 start_time: float = 0,
-                 start_index: int = 0,
-                 ):
-        self.number: int = number
-        self.driver: str = driver
-        self.lap_time: float = 0.0  # (s)
-        self.is_valid: bool = False
-        self.sectors: list[Lap.Sector] = []
-        self.start_time: float = start_time
-        self.start_index: int = start_index
 
-    def set_times(self, sector_times: 3*[float], sector_start: 3*[float, int]):
-        self.sectors = []
-        for sector_number in range(3):
-            try:
-                sector = self.Sector(
-                    number=sector_number,
-                    time=sector_times[sector_number],
-                    start_time=sector_start[sector_number][0],
-                    start_index=sector_start[sector_number][1],
-                )
-            except IndexError:
-                sector = None
-            self.sectors.append(sector)
-        self.lap_time = sum(sector_times)
 
-    def __str__(self) -> str:
-        minutes, seconds = divmod(self.lap_time, 60)
-        return f'{minutes:.0f}:{seconds:.3f}'
+
+
+
+
+
+
 
 
 def main(data_file: str):
@@ -291,7 +265,7 @@ def plot_3d_trajectory(data: DataContainer, figure):
                                                     y=data.car_coord_y.values,
                                                     z=data.car_coord_z.values,)
                      )
-    figure.update_layout(scene=dict(aspectmode='data',
+    figure.update_layout(scene=dict(aspectmode='raw_data',
                                     aspectratio=dict(x=1, y=1, z=1)
                                     ),
                          )
@@ -303,39 +277,6 @@ def plot_trajectory(data: DataContainer, figure):
                                                   )
                      )
     figure.update_yaxes(scaleanchor="x", scaleratio=1)
-
-
-def get_laps(data: DataContainer, time_scales, driver: str) -> list[Lap]:
-    number_of_sectors, _ = divmod(len(data.last_sector_time.values) - 1, 3)
-    number_of_laps, _ = divmod(number_of_sectors, 3)
-    laps = []
-    start_index = 3
-    step = 3
-    sectors_per_lap = 3
-
-    lap_start_times = time_scales[data.lap_number.sample_rate['current']][data.lap_number.indices]
-    lap_numbers = data.lap_number.values
-
-    for i in range(len(lap_numbers)):
-        lap_number = lap_numbers[i]
-        lap = Lap(number=lap_number, driver=driver, start_time=lap_start_times[i], start_index=data.lap_number.indices[i])
-
-        sector_times_indices = slice(start_index + (step*sectors_per_lap*lap_number), start_index + (step*sectors_per_lap*(lap_number+1)), step)
-        sector_times = data.last_sector_time.values[sector_times_indices].tolist()
-        indices = data.last_sector_time.indices[sector_times_indices]
-        sector_start_times = time_scales[data.last_sector_time.sample_rate['current']][indices]
-        # print("lap", lap_number, "Sector times: ", sector_times, ", indices:", indices, ", start times: ", sector_start_times)
-
-        sector_start = []
-        for sector_number in range(sectors_per_lap):
-            try:
-                start = [sector_start_times[sector_number], data.last_sector_time.indices[sector_times_indices][sector_number]]
-                sector_start.append(start)
-            except IndexError:
-                pass
-        lap.set_times(sector_times, sector_start)
-        laps.append(lap)
-    return laps
 
 
 def plot_sector_times(sector_times_array: numpy.ndarray, figure: plotly.graph_objects.Figure):
@@ -469,9 +410,9 @@ def general_time_plot(figure: plotly.graph_objects.Figure,
 
 
 def debug():
-    source_file = 'data/corvette_c7_laguna_seca_example.csv'
-    # source_file = 'data/gps_calibration.csv'
-    # source_file = 'data/turn_in_out_calibration.csv'
+    source_file = 'raw_data/corvette_c7_laguna_seca_example.csv'
+    # source_file = 'raw_data/gps_calibration.csv'
+    # source_file = 'raw_data/turn_in_out_calibration.csv'
     h, info_container, data_container = main(source_file)
     # print(info_container)
     Origin.setup("config/reference_points.txt")
@@ -483,10 +424,10 @@ def debug():
 
 
 if __name__ == '__main__':
-    # source_file = 'data/corvette_c7_laguna_seca_example.csv'
-    source_file = 'data/04072025-204315-Chuck-ks_audi_a1s1-ks_laguna_seca.csv'
-    # source_file = 'data/gps_calibration.csv'
-    # source_file = 'data/turn_in_out_calibration.csv'
+    # source_file = 'raw_data/corvette_c7_laguna_seca_example.csv'
+    source_file = 'raw_data/04072025-204315-Chuck-ks_audi_a1s1-ks_laguna_seca.csv'
+    # source_file = 'raw_data/gps_calibration.csv'
+    # source_file = 'raw_data/turn_in_out_calibration.csv'
     h, info_container, data_container = main(source_file)
     Origin.setup("config/reference_points.txt")
     data_container.set_sample_rates()

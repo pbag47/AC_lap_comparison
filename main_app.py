@@ -12,8 +12,8 @@ from data_container import main, general_time_plot, general_xy_plot, plot_trajec
 
 load_figure_template('SUPERHERO')
 
-# source_file = 'data/corvette_c7_laguna_seca_example.csv'
-source_file = "data/04072025-204315-Chuck-ks_audi_a1s1-ks_laguna_seca.csv"
+# source_file = 'raw_data/corvette_c7_laguna_seca_example.csv'
+source_file = "raw_data/04072025-204315-Chuck-ks_audi_a1s1-ks_laguna_seca.csv"
 h, info_container, data = main(source_file)
 Origin.setup("config/reference_points.txt")
 data.set_sample_rates()

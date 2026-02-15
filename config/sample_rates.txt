@@ -165,4 +165,4 @@ Tire Lat Fy FL | 30
 Tire Lat Fy FR | 30
 Tire Lat Fy RL | 30
 Tire Lat Fy RR | 30
-UTC Time | 30
+UTC Time | 1
