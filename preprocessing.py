@@ -129,4 +129,4 @@ if __name__ == '__main__':
 
     info_container.save_as_csv()
     export_processed_data(info_container, data_container)
-    # TODO: Export DataContainer as csv file with unified sample rates
+    data_container.save_as_csv(info_container)

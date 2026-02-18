@@ -194,6 +194,18 @@ class DataContainer(Container):
             time_scales[sample_rate] = numpy.arange(start=0, stop=max_time+(1/(2*sample_rate)), step=1/sample_rate)
         return time_scales
 
+    def save_as_csv(self, info: InfoContainer):
+        data_file_path = os.path.join("processed_data", info.driver.value + " - Data.csv")
+        with open(data_file_path, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            header_row = [data_field.title for data_field in vars(self).values()]
+            units_row = [data_field.unit for data_field in vars(self).values()]
+            writer.writerow(header_row)
+            writer.writerow(units_row)
+            for row_number in range(len(self.time.values)):
+                row = [data_field.values[row_number] for data_field in vars(self).values()]
+                writer.writerow(row)
+
     def __str__(self):
         output_str = 'DataContainer:'
         for attribute_name, attribute_value in vars(self).items():
