@@ -3,7 +3,7 @@ import json
 import os
 from itertools import groupby
 
-from data_container import DataContainer, InfoContainer
+from data_container import DataContainer, InfoContainer, InfoField
 from coordinates_handler import Origin
 from Lap_class import Lap
 
@@ -31,6 +31,13 @@ def fill_data_gaps(data: DataContainer):
             data_field.values = filled_values
             data_field.index = filled_indices
             data_field.sample_rate["current"] = data_field.sample_rate["default"]
+
+
+def add_header_to_info(header: dict, info: InfoContainer):
+    for attribute, value in header.items():
+        attributes_name = InfoContainer._get_attributes_names([attribute])[0][0]
+        setattr(info, attributes_name, InfoField(attribute, "", value))
+
 
 
 def export_processed_data(data: DataContainer, header: dict):
@@ -104,12 +111,10 @@ def main(data_file: str):
 
 
 if __name__ == '__main__':
-    # source_file = 'raw_data/corvette_c7_laguna_seca_example.csv'
-    source_file = 'raw_data/04072025-204315-Chuck-ks_audi_a1s1-ks_laguna_seca.csv'
+    source_file = 'raw_data/corvette_c7_laguna_seca_example.csv'
+    # source_file = 'raw_data/04072025-204315-Chuck-ks_audi_a1s1-ks_laguna_seca.csv'
     # source_file = 'raw_data/gps_calibration.csv'
     # source_file = 'raw_data/turn_in_out_calibration.csv'
-
-    # TODO: Merge header fields into info_container
 
     h, info_container, data_container = main(source_file)
     Origin.setup("config/reference_points.txt")
@@ -118,6 +123,9 @@ if __name__ == '__main__':
     fill_data_gaps(data_container)
 
     print(h)
+
+    add_header_to_info(h, info_container)
+
     print(info_container)
     print(data_container)
 
