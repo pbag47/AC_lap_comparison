@@ -1,5 +1,6 @@
 import csv
 import json
+import os
 import plotly
 import plotly.graph_objects
 import plotly.io
@@ -41,6 +42,9 @@ class InfoField:
     def __str__(self):
         return f"{self.title}: {self.value}{self.unit}"
 
+    def as_csv_row(self) -> list[str]:
+        return [self.title, str(self.value), self.unit]
+
 
 class InfoContainer(Container):
     def __init__(self, titles, units, values):
@@ -65,6 +69,13 @@ class InfoContainer(Container):
         for attribute_name, attribute_value in vars(self).items():
             output_str += f"\n\t{attribute_value}"
         return output_str
+
+    def save_as_csv(self):
+        info_file_path = os.path.join("processed_data", self.driver.value + " - Info.csv")
+        with open(info_file_path, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            for info_field in vars(self).values():
+                writer.writerow(info_field.as_csv_row())
 
     @staticmethod
     def _get_values(values: list[str]):

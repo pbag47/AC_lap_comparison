@@ -40,14 +40,14 @@ def add_header_to_info(header: dict, info: InfoContainer):
 
 
 
-def export_processed_data(data: DataContainer, header: dict):
-    laps = get_laps(data, header["Driver"])
-    file_name = header["Driver"]
-    with open(os.path.join("processed_data", file_name + ".json"), "w") as json_file:
+def export_processed_data(info: InfoContainer, data: DataContainer):
+    laps = get_laps(info, data)
+    file_name = info.driver.value + " - Laps.json"
+    with open(os.path.join("processed_data", file_name), "w") as json_file:
         json.dump(laps, json_file, indent=2, cls=Lap.Encoder)
 
 
-def get_laps(data: DataContainer, driver: str) -> list[Lap]:
+def get_laps(info: InfoContainer, data: DataContainer) -> list[Lap]:
     number_of_sectors, _ = divmod(len(data.last_sector_time.values) - 1, 3)
     number_of_laps, _ = divmod(number_of_sectors, 3)
     laps = []
@@ -59,7 +59,7 @@ def get_laps(data: DataContainer, driver: str) -> list[Lap]:
         number_of_consecutive_values = len(list(lap_group))
         lap = Lap(
             number=lap_number,
-            driver=driver,
+            driver=info.driver.value,
             start_index=lap_index_counter,
         )
         sector_times = []
@@ -122,12 +122,11 @@ if __name__ == '__main__':
     decimate_data(data_container)
     fill_data_gaps(data_container)
 
-    print(h)
-
     add_header_to_info(h, info_container)
 
     print(info_container)
     print(data_container)
 
-    export_processed_data(data_container, h)
+    info_container.save_as_csv()
+    export_processed_data(info_container, data_container)
     # TODO: Export DataContainer as csv file with unified sample rates
