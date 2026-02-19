@@ -6,6 +6,7 @@ class Sector(SerializableObject):
     attribute_types = dict(
         sector_number=int,
         sector_time=float,
+        is_set=bool,
     )
 
     def __init__(self,
@@ -14,6 +15,7 @@ class Sector(SerializableObject):
                  ):
         self.sector_number: int = number
         self.sector_time: float = time
+        self.is_set: bool = False
 
     def __str__(self) -> str:
         return f"S{self.sector_number:.0f}: {self.sector_time:.3f}"
@@ -36,6 +38,7 @@ class Lap(SerializableObject):
         driver=str,
         lap_time=float,
         is_valid=bool,
+        is_complete=bool,
         start_index=int,
     )
 
@@ -48,6 +51,7 @@ class Lap(SerializableObject):
         self.driver: str = driver
         self.lap_time: float = 0.0  # (s)
         self.is_valid: bool = False
+        self.is_complete: bool = False
         self.sectors: list[Sector] = []
         self.start_index: int = start_index
 
@@ -61,9 +65,13 @@ class Lap(SerializableObject):
                     number=sector_number,
                     time=sector_times[sector_number]
                 )
+                sector.is_set = True
             except IndexError:
-                sector = None
+                sector = Sector(number=sector_number)
+                sector.is_set = False
             self.sectors.append(sector)
+        if all(sector.is_set for sector in self.sectors):
+            self.is_complete = True
         self.lap_time = sum(sector_times)
 
     def __str__(self) -> str:
