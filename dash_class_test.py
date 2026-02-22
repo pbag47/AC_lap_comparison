@@ -73,6 +73,7 @@ class MainApplication:
             laps = json.load(open(os.path.join(files_location, json_file)), object_hook=Lap.__from_json__)
             driver = laps[0].driver
             self.laps[driver] = laps
+            self.selected_laps[driver] = []
         self.get_best_times()
         self.get_personal_best_times()
 
@@ -111,7 +112,7 @@ class MainApplication:
             case 'tab-rankings':
                 sub_page = self.rankings_page.page
             case "tab-selection":
-                sub_page = self.lap_selection_page.page
+                sub_page = self.lap_selection_page.get_page()
             case 'tab-session':
                 sub_page = dash.html.Div([dash.html.H3('Session')])
             case 'tab-lap':

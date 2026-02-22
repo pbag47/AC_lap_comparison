@@ -1,11 +1,12 @@
 
 import dash
+import dash_bootstrap_components as dbc
 
 
 class LapSelectorPage:
     def __init__(self, app):
         self._app = app
-        self.dropdown_ids = []
+        self.dropdowns = []
         self.selector_components = []
         self.setup()
 
@@ -35,10 +36,20 @@ class LapSelectorPage:
                 [dash.dependencies.Input(dropdown_id, 'value'),
                  dash.dependencies.Input(dropdown_id, 'id'),
                  ])(self.update_selected_laps)
-            self.selector_components.append(dropdown)
+            component = dbc.Row([
+                dbc.Col([dash.html.H6(driver, style={"text-align": "right"})], width=3),
+                dbc.Col([dropdown], width=True),
+            ], align="center")
+            self.dropdowns.append(dropdown)
+            self.selector_components.append(component)
+
+    def get_page(self):
+        for dropdown in self.dropdowns:
+            driver, _ = dropdown.id.split("|")
+            dropdown.value = [lap.number for lap in self._app.selected_laps[driver]]
+        return self.page
 
     def update_selected_laps(self, values: list[int], dropdown_identifier: str):
         driver, _ = dropdown_identifier.split("|")
-        self._app.selected_laps[driver] = values
-
+        self._app.selected_laps[driver] = [lap for lap in self._app.laps[driver] if lap.number in values]
 
