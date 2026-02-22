@@ -76,7 +76,8 @@ class Lap(SerializableObject):
 
     def __str__(self) -> str:
         minutes, seconds = divmod(self.lap_time, 60)
-        return f'Lap {self.number}, {minutes:.0f}:{seconds:.3f} {[str(sector) for sector in self.sectors]}'
+        return f'{minutes:.0f}:{seconds:.3f}'
+        # return f'Lap {self.number}, {minutes:.0f}:{seconds:.3f} {[str(sector) for sector in self.sectors]}'
 
     @classmethod
     def __from_json__(cls, input_dict):
