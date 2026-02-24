@@ -1,15 +1,18 @@
 
 import dash
-import dash_bootstrap_components as dbc
-from dash_bootstrap_templates import load_figure_template
-import dash_daq as daq
 import json
 import os
+import pandas
 import plotly
-import plotly.graph_objects
+
+import dash_bootstrap_components as dbc
+import dash_daq as daq
+from dash_bootstrap_templates import load_figure_template
 
 from coordinates_handler import Origin, get_sections_from_ini_file
 from data_container import main, general_time_plot, general_xy_plot, plot_trajectory, InfoContainer
+
+from FreeDisplayPage_class import FreeDisplayPage
 from Lap_class import Lap
 from LapAnalysisPage_class import LapAnalysisPage
 from LapSelectorPage_class import LapSelectorPage
@@ -42,6 +45,7 @@ class MainApplication:
         self.lap_analysis_page = LapAnalysisPage(self)
         self.rankings_page = RankingsPage(self)
         self.lap_selection_page = LapSelectorPage(self)
+        self.free_display_page = FreeDisplayPage(self)
         self.app.layout = dash.html.Div(
             [
                 dash.html.H1('Télémétrie'),
@@ -82,8 +86,22 @@ class MainApplication:
         pass
 
     def import_data(self):
-        # TODO
-        pass
+        self.data = {}
+        for driver, laps in self.selected_laps.items():
+            self.data[driver] = {}
+            for lap in laps:
+                next_lap = [lap_candidate for lap_candidate in self.laps[driver] if lap_candidate.number == lap.number + 1]
+                if next_lap:
+                    row_skip_selector = lambda x: not(lap.start_index <= x < next_lap[0].start_index)
+                else:
+                    row_skip_selector = lambda x: not(x >= lap.start_index)
+                with open(os.path.join('processed_data', driver + ' - Data.csv')) as file:
+                    lap_data = pandas.read_csv(
+                        file,
+                        skiprows=row_skip_selector,
+                        header=[0, 1],
+                    )
+                self.data[driver][lap.number] = lap_data
 
     def set_callbacks(self):
         self.app.callback(dash.dependencies.Output('analysis_page', 'children'),
@@ -119,7 +137,8 @@ class MainApplication:
                 sub_page = dash.html.Div([dash.html.H3('Lap')])
                 # sub_page = self.lap_analysis_page.page
             case 'tab-free':
-                sub_page = dash.html.Div([dash.html.H3('Session')]) # get_free_display_page()
+                print("free display page")
+                sub_page = self.free_display_page.get_page()
             case _:
                 sub_page = dash.html.Div([])
         return sub_page

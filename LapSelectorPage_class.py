@@ -52,4 +52,5 @@ class LapSelectorPage:
     def update_selected_laps(self, values: list[int], dropdown_identifier: str):
         driver, _ = dropdown_identifier.split("|")
         self._app.selected_laps[driver] = [lap for lap in self._app.laps[driver] if lap.number in values]
+        self._app.import_data()
 

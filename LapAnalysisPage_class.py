@@ -13,11 +13,42 @@ class LapAnalysisPage:
         self.track_map_figure = plotly.graph_objects.Figure()
         self.throttle_brake_figure = plotly.graph_objects.Figure()
         self.gg_graph_figure = plotly.graph_objects.Figure()
-
         self.sections = get_sections_from_ini_file()
-        self.page = dash.html.Div([dash.html.H3('Analyse tour-par-tour')])
-        self.page.children.append(dash.html.H3('Retest'))
+        self.selected_section = "full_lap"
+        options = [dict(label="Tour complet", value="full_lap")]
+        for section in self.sections:
+            options.append(dict(label=section.title, value=section.title))
+        self.section_dropdown = dash.dcc.Dropdown(
+                options=options,
+                id='dropdown-sector_selection',
+                # maxHeight=400,
+                placeholder="Sélectionner un secteur",
+            ),
+        self.setup()
 
+        self.page = dash.html.Div([
+            dash.html.H3('Analyse tour-par-tour'),
+            self.section_dropdown,
+        ])
+
+
+    def setup(self):
+        self.gg_graph_figure.update_layout(
+            height=175,
+            width=175,
+            margin=dict(l=10, r=10, t=10, b=10),
+        )
+
+        self._app.app.callback(
+            [dash.dependencies.Input("dropdown-sector_selection", 'value'),
+             ])(self.update_track_map)
+
+    def update_track_map(self):
+        pass
+
+    def get_page(self):
+        self.section_dropdown.value = self.selected_section
+        return self.page
 
 
 def void():
