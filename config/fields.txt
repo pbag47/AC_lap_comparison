@@ -1,0 +1,167 @@
+time (s)
+Last Sector Time (s)
+Fuel Level (l)
+Air Temp (C)
+Air Density (kg/m3)
+Road Temp (C)
+Surface Grip (%)
+Wind Direction (deg)
+Wind Speed (kph)
+Race Flag
+Brake Bias (%)
+Lap Invalidated
+Engine Brake Setting
+Tire Pressure FL (psi)
+Tire Pressure FR (psi)
+Tire Pressure RL (psi)
+Tire Pressure RR (psi)
+Tire Rubber Grip FL (%)
+Tire Rubber Grip FR (%)
+Tire Rubber Grip RL (%)
+Tire Rubber Grip RR (%)
+VirtualKm FL (km)
+VirtualKm FR (km)
+VirtualKm RL (km)
+VirtualKm RR (km)
+Car Damage Front
+Car Damage Right
+Car Damage Rear
+Car Damage Left
+Tyres Compound
+Race Positon
+Engine Life Left
+Gearbox Damage
+Oil Temperature (deg)
+Water Temperature (deg)
+Car Pos Norm
+Clutch Pos (%)
+Num Tires Off Track
+DRS Available
+DRS Active
+ERS Is Charging
+KERS Charge (%)
+KERS Deployed Energy (kJ)
+KERS Input (%)
+Turbo Boost
+Relative Plank Wear (mm)
+Mark
+Tire Dirt Level FL
+Tire Dirt Level FR
+Tire Dirt Level RL
+Tire Dirt Level RR
+Tire Temp Core FL (C)
+Tire Temp Core FR (C)
+Tire Temp Core RL (C)
+Tire Temp Core RR (C)
+Tire Temp Inner FL (C)
+Tire Temp Inner FR (C)
+Tire Temp Inner RL (C)
+Tire Temp Inner RR (C)
+Tire Temp Middle FL (C)
+Tire Temp Middle FR (C)
+Tire Temp Middle RL (C)
+Tire Temp Middle RR (C)
+Tire Temp Outer FL (C)
+Tire Temp Outer FR (C)
+Tire Temp Outer RL (C)
+Tire Temp Outer RR (C)
+Tire Grain FL
+Tire Grain FR
+Tire Grain RL
+Tire Grain RR
+Tire Blister FL
+Tire Blister FR
+Tire Blister RL
+Tire Blister RR
+Brake Temp FL (C)
+Brake Temp FR (C)
+Brake Temp RL (C)
+Brake Temp RR (C)
+Drivetrain Torque (Nm)
+Drivetrain Power (hp)
+Car Heading (deg)
+ABS Active
+TC Active
+Ground Speed (kph)
+Lap Time (s)
+Lap Distance (m)
+Lap Number
+Throttle Pos (%)
+Brake Pos (%)
+Handbrake Pos (%)
+Steering Angle (deg)
+Gear
+Engine RPM (rpm)
+Steering Torque (Nm)
+Camber FL (deg)
+Camber FR (deg)
+Camber RL (deg)
+Camber RR (deg)
+Toe In FL (deg)
+Toe In FR (deg)
+Toe In RL (deg)
+Toe In RR (deg)
+Brake Torque FL (Nm)
+Brake Torque FR (Nm)
+Brake Torque RL (Nm)
+Brake Torque RR (Nm)
+ndSlip FL
+ndSlip FR
+ndSlip RL
+ndSlip RR
+Session Time Left (s)
+Wheel Angular Speed FL (rad/s)
+Wheel Angular Speed FR (rad/s)
+Wheel Angular Speed RL (rad/s)
+Wheel Angular Speed RR (rad/s)
+Car Coord X (m)
+Car Coord Y (m)
+Car Coord Z (m)
+CG Accel Lateral (G)
+CG Accel Longitudinal (G)
+CG Accel Vertical (G)
+Drive Train Speed (kph)
+Chassis Velocity X (m/s)
+Chassis Velocity Y (m/s)
+Chassis Velocity Z (m/s)
+Chassis Pitch Rate (deg/s)
+Chassis Pitch Angle (deg)
+Chassis Roll Rate (deg/s)
+Chassis Roll Angle (deg)
+Chassis Yaw Rate (deg/s)
+CG Height (mm)
+Suspension Travel FL (mm)
+Suspension Travel FR (mm)
+Suspension Travel RL (mm)
+Suspension Travel RR (mm)
+Ride Height Front (mm)
+Ride Height Rear (mm)
+Tire Load FL (N)
+Tire Load FR (N)
+Tire Load RL (N)
+Tire Load RR (N)
+Tire Loaded Radius FL (mm)
+Tire Loaded Radius FR (mm)
+Tire Loaded Radius RL (mm)
+Tire Loaded Radius RR (mm)
+Tire Slip Angle FL (deg)
+Tire Slip Angle FR (deg)
+Tire Slip Angle RL (deg)
+Tire Slip Angle RR (deg)
+Tire Slip Ratio FL (%)
+Tire Slip Ratio FR (%)
+Tire Slip Ratio RL (%)
+Tire Slip Ratio RR (%)
+Self Align Torque FL (Nm)
+Self Align Torque FR (Nm)
+Self Align Torque RL (Nm)
+Self Align Torque RR (Nm)
+Tire Long Fx FL (N)
+Tire Long Fx FR (N)
+Tire Long Fx RL (N)
+Tire Long Fx RR (N)
+Tire Lat Fy FL (N)
+Tire Lat Fy FR (N)
+Tire Lat Fy RL (N)
+Tire Lat Fy RR (N)
+UTC Time (s)

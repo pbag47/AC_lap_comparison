@@ -1,4 +1,5 @@
 
+import csv
 import dash
 import json
 import os
@@ -27,6 +28,7 @@ class MainApplication:
         self.laps: dict[str: list[Lap]] = dict() # {driver: list[Laps]}
         self.info: dict[str: dict] = dict() # {driver: {info_name: info_value}}
         self.data: dict[str: dict] = dict() # {driver: {data_name: data_values}}
+        self.fields: list[str] = []  # [name]
         self.selected_laps: dict[str: list[Lap]] = dict() # {driver: list[Laps]}
         self.best_lap: Lap | None = None
         self.best_s1: Lap | None = None
@@ -37,11 +39,13 @@ class MainApplication:
         self.personal_best_s2: dict[str: Lap] = dict()
         self.personal_best_s3: dict[str: Lap] = dict()
         self.import_laps()
+        self.import_fields()
         dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates@V1.0.2/dbc.min.css"
-        self.app = dash.Dash(__name__,
-                        external_stylesheets=[dbc.themes.SUPERHERO, dbc_css],
-                        suppress_callback_exceptions=True,
-                        )
+        self.app = dash.Dash(
+            __name__,
+            external_stylesheets=[dbc.themes.SUPERHERO, dbc_css],
+            suppress_callback_exceptions=True,
+        )
         self.lap_analysis_page = LapAnalysisPage(self)
         self.rankings_page = RankingsPage(self)
         self.lap_selection_page = LapSelectorPage(self)
@@ -81,6 +85,10 @@ class MainApplication:
         self.get_best_times()
         self.get_personal_best_times()
 
+    def import_fields(self):
+        with open(os.path.join("config", "fields.txt"), newline="\r\n") as file:
+            self.fields = file.readlines()
+
     def import_info(self):
         # TODO
         pass
@@ -89,6 +97,11 @@ class MainApplication:
         self.data = {}
         for driver, laps in self.selected_laps.items():
             self.data[driver] = {}
+            # with open(os.path.join('processed_data', driver + ' - Data.csv')) as file:
+            #     header_reader = csv.reader(file, delimiter=',')
+            #     names = next(header_reader)
+            #     units = next(header_reader)
+            #     headers = [f"{name} ({unit})" if unit else f"{name}" for name, unit in zip(names, units)]
             for lap in laps:
                 next_lap = [lap_candidate for lap_candidate in self.laps[driver] if lap_candidate.number == lap.number + 1]
                 if next_lap:
@@ -99,9 +112,13 @@ class MainApplication:
                     lap_data = pandas.read_csv(
                         file,
                         skiprows=row_skip_selector,
-                        header=[0, 1],
+                        names=self.fields,
                     )
                 self.data[driver][lap.number] = lap_data
+                # with open(os.path.join('config', "fields.txt"), mode="w") as file:
+                #     fields = self.data[driver][lap.number].columns.values.tolist()
+                #     file.write("\r\n".join(fields))
+
 
     def set_callbacks(self):
         self.app.callback(dash.dependencies.Output('analysis_page', 'children'),
@@ -137,7 +154,8 @@ class MainApplication:
                 sub_page = dash.html.Div([dash.html.H3('Lap')])
                 # sub_page = self.lap_analysis_page.page
             case 'tab-free':
-                print("free display page")
+                # print("free display page")
+                # sub_page = dash.html.Div([dash.html.H3('Affichage libre')])
                 sub_page = self.free_display_page.get_page()
             case _:
                 sub_page = dash.html.Div([])
