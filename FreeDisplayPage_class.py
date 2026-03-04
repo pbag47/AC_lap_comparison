@@ -81,8 +81,9 @@ class FreeDisplayPage:
         for y_field in y_fields:
             for driver, laps in self._app.selected_laps.items():
                 for lap in laps:
-                    x_data = self._app.data[driver][lap.number].loc[:, x_field]
-                    y_data = self._app.data[driver][lap.number].loc[:, y_field]
+                    lap_data = self._app.data[driver][lap.number][10:-10]
+                    x_data = lap_data.loc[:, x_field]
+                    y_data = lap_data.loc[:, y_field]
                     self.xy_graph_figure.add_trace(
                         plotly.graph_objects.Scatter(
                             x=x_data,
@@ -109,8 +110,9 @@ class FreeDisplayPage:
         for value in values:
             for driver, laps in self._app.selected_laps.items():
                 for lap in laps:
-                    x_data = self._app.data[driver][lap.number].loc[:, "time (s)\r\r\n"] - self._app.data[driver][lap.number].loc[:, "time (s)\r\r\n"][0]
-                    y_data = self._app.data[driver][lap.number].loc[:, value]
+                    lap_data = self._app.data[driver][lap.number][10:-10]
+                    x_data = lap_data.loc[:, "time (s)\r\r\n"] - lap_data.loc[:, "time (s)\r\r\n"][0]
+                    y_data = lap_data.loc[:, value]
                     self.time_graph_figure.add_trace(
                         plotly.graph_objects.Scatter(
                             x=x_data,

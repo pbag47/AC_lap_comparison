@@ -151,8 +151,8 @@ class MainApplication:
             case 'tab-session':
                 sub_page = dash.html.Div([dash.html.H3('Session')])
             case 'tab-lap':
-                sub_page = dash.html.Div([dash.html.H3('Lap')])
-                # sub_page = self.lap_analysis_page.page
+                # sub_page = dash.html.Div([dash.html.H3('Lap')])
+                sub_page = self.lap_analysis_page.get_page()
             case 'tab-free':
                 # print("free display page")
                 # sub_page = dash.html.Div([dash.html.H3('Affichage libre')])
