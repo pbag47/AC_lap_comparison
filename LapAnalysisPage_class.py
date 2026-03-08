@@ -12,10 +12,11 @@ class LapAnalysisPage:
         self.track_map_origin = Origin
         self.track_map_origin.setup("config/reference_points.txt")
         self.track_map_figure = plotly.graph_objects.Figure()
+        self.gg_figure = plotly.graph_objects.Figure()
         self.throttle_figure = plotly.graph_objects.Figure()
         self.brake_figure = plotly.graph_objects.Figure()
         self.steering_angle_figure = plotly.graph_objects.Figure()
-        self.gg_graph_figure = plotly.graph_objects.Figure()
+        self.speed_figure = plotly.graph_objects.Figure()
         self.sections = get_sections_from_ini_file()
         self.selected_section: Section | None = None
         options = [dict(label="Tour complet", value="full_lap")]
@@ -32,7 +33,24 @@ class LapAnalysisPage:
         self.setup_layout()
         self.setup_callbacks()
 
-        throttle_brake_component = dbc.Col([
+        square_figures_component = dbc.Row([
+            dbc.Col([
+                dash.dcc.Graph(
+                    figure=self.track_map_figure,
+                    id='track-map-figure',
+                )],
+                width=6,
+            ),
+            dbc.Col([
+                dash.dcc.Graph(
+                    figure=self.gg_figure,
+                    id='gg-figure',
+                )],
+                width=6,
+            ),
+        ])
+
+        input_components = [
             dbc.Row([
                 dash.dcc.Graph(
                     figure=self.throttle_figure,
@@ -51,29 +69,45 @@ class LapAnalysisPage:
                     id='steering-angle-figure',
                 )],
             ),
-        ],
-            width=True,
-        )
+            dbc.Row([
+                dash.dcc.Graph(
+                    figure=self.speed_figure,
+                    id='speed-figure',
+                )],
+            )
+        ]
 
         self.page = dash.html.Div([
             dash.html.H3('Analyse tour-par-tour'),
             self.section_dropdown,
-            dbc.Row([
-                dbc.Col([
-                    dash.dcc.Graph(
-                        figure=self.track_map_figure,
-                        id='track-map-figure',
-                    )],
-                    width=6),
-                throttle_brake_component,
-            ])
+            square_figures_component,
+            *input_components,
         ])
 
     def setup_layout(self):
         self.track_map_figure.update_layout(
             yaxis=dict(scaleanchor="x", scaleratio=1),
             margin=dict(l=10, r=10, t=30, b=20),
-            title=dict(text="Trajectoire")
+            title=dict(text="Trajectoire"),
+            # width=600,
+            height=450,
+        )
+        self.gg_figure.update_layout(
+            xaxis=dict(
+                title=dict(text="Accélération latérale (G)"),
+                range=[-2, 2],
+            ),
+            yaxis=dict(
+                scaleanchor="x",
+                scaleratio=1,
+                title=dict(text="Accélération longitudinale (G)"),
+                autorange="reversed",
+                range=[-2, 2],
+            ),
+            margin=dict(l=10, r=10, t=30, b=20),
+            title=dict(text="Diagramme G-G"),
+            # width=600,
+            height=450,
         )
         self.throttle_figure.update_layout(
             yaxis=dict(range=[0, 100]),
@@ -88,25 +122,25 @@ class LapAnalysisPage:
             title=dict(text="Frein (%)")
         )
         self.steering_angle_figure.update_layout(
-            # yaxis=dict(range=[0, 100]),
             height=150,
             margin=dict(l=10, r=10, t=30, b=30),
             title=dict(text="Angle au volant (°)")
         )
-
-        # self.gg_graph_figure.update_layout(
-        #     height=175,
-        #     width=175,
-        #     margin=dict(l=10, r=10, t=10, b=10),
-        # )
+        self.speed_figure.update_layout(
+            height=150,
+            margin=dict(l=10, r=10, t=30, b=30),
+            title=dict(text="Vitesse (km/h)")
+        )
 
     def setup_callbacks(self):
         self._app.app.callback(
             [
                 dash.dependencies.Output("track-map-figure", 'figure'),
+                dash.dependencies.Output("gg-figure", 'figure'),
                 dash.dependencies.Output("throttle-figure", 'figure'),
                 dash.dependencies.Output("brake-figure", 'figure'),
                 dash.dependencies.Output("steering-angle-figure", 'figure'),
+                dash.dependencies.Output("speed-figure", 'figure'),
                 dash.dependencies.Input("dropdown-sector_selection", 'value'),
              ])(self.update_page)
 
@@ -116,10 +150,19 @@ class LapAnalysisPage:
         except IndexError:
             self.selected_section = None
         self.update_track_map()
+        self.update_gg()
         self.update_throttle()
         self.update_brake()
         self.update_steering_angle()
-        return self.track_map_figure, self.throttle_figure, self.brake_figure, self.steering_angle_figure
+        self.update_speed()
+        return (
+            self.track_map_figure,
+            self.gg_figure,
+            self.throttle_figure,
+            self.brake_figure,
+            self.steering_angle_figure,
+            self.speed_figure,
+        )
 
     def plot_background(self):
         if self.selected_section is None:
@@ -185,6 +228,14 @@ class LapAnalysisPage:
             y_field="Car Coord Y (m)\r\r\n",
         )
 
+    def update_gg(self):
+        self.gg_figure.data = []
+        self.plot(
+            self.gg_figure,
+            x_field="CG Accel Lateral (G)\r\r\n",
+            y_field="CG Accel Longitudinal (G)\r\r\n",
+        )
+
     def update_throttle(self):
         self.throttle_figure.data = []
         self.plot(
@@ -207,6 +258,14 @@ class LapAnalysisPage:
             self.steering_angle_figure,
             x_field="Car Pos Norm\r\r\n",
             y_field="Steering Angle (deg)\r\r\n",
+        )
+
+    def update_speed(self):
+        self.speed_figure.data = []
+        self.plot(
+            self.speed_figure,
+            x_field="Car Pos Norm\r\r\n",
+            y_field="Ground Speed (kph)\r\r\n",
         )
 
     def get_page(self):
