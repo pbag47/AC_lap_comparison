@@ -9,8 +9,10 @@ from coordinates_handler import Origin, get_sections_from_ini_file, Section, dx,
 class LapAnalysisPage:
     def __init__(self, app):
         self._app = app
+        self.sections_extend = 0.02
         self.track_map_origin = Origin
         self.track_map_origin.setup("config/reference_points.txt")
+        self.gap_table_figure = plotly.graph_objects.Figure()
         self.track_map_figure = plotly.graph_objects.Figure()
         self.gg_figure = plotly.graph_objects.Figure()
         self.throttle_figure = plotly.graph_objects.Figure()
@@ -41,6 +43,13 @@ class LapAnalysisPage:
                 )],
                 width=6,
             ),
+            # dbc.Col([
+            #     dash.dcc.Graph(
+            #         figure=self.gap_table_figure,
+            #         id='gap-table-figure',
+            #     )],
+            #     width=2,
+            # ),
             dbc.Col([
                 dash.dcc.Graph(
                     figure=self.gg_figure,
@@ -80,6 +89,10 @@ class LapAnalysisPage:
         self.page = dash.html.Div([
             dash.html.H3('Analyse tour-par-tour'),
             self.section_dropdown,
+            dash.dcc.Graph(
+                figure=self.gap_table_figure,
+                id='gap-table-figure',
+            ),
             square_figures_component,
             *input_components,
         ])
@@ -91,6 +104,10 @@ class LapAnalysisPage:
             title=dict(text="Trajectoire"),
             # width=600,
             height=450,
+        )
+        self.gap_table_figure.update_layout(
+            height=250,
+            margin=dict(l=10, r=10, t=30, b=30),
         )
         self.gg_figure.update_layout(
             xaxis=dict(
@@ -136,6 +153,7 @@ class LapAnalysisPage:
         self._app.app.callback(
             [
                 dash.dependencies.Output("track-map-figure", 'figure'),
+                dash.dependencies.Output("gap-table-figure", 'figure'),
                 dash.dependencies.Output("gg-figure", 'figure'),
                 dash.dependencies.Output("throttle-figure", 'figure'),
                 dash.dependencies.Output("brake-figure", 'figure'),
@@ -150,6 +168,7 @@ class LapAnalysisPage:
         except IndexError:
             self.selected_section = None
         self.update_track_map()
+        self.update_gap_table()
         self.update_gg()
         self.update_throttle()
         self.update_brake()
@@ -157,6 +176,7 @@ class LapAnalysisPage:
         self.update_speed()
         return (
             self.track_map_figure,
+            self.gap_table_figure,
             self.gg_figure,
             self.throttle_figure,
             self.brake_figure,
@@ -186,37 +206,77 @@ class LapAnalysisPage:
             yanchor="bottom",
         )
 
-    def plot(self, figure: plotly.graph_objs.Figure, x_field: str, y_field: str):
-        sections_extend = 0.02
+    def get_section_data(self, driver, lap):
+        lap_data = self._app.data[driver][lap.number][10:-10]
         if self.selected_section is None:
-            for driver, laps in self._app.selected_laps.items():
-                for lap in laps:
-                    lap_data = self._app.data[driver][lap.number][10:-10]
-                    x_data = lap_data.loc[:, x_field]
-                    y_data = lap_data.loc[:, y_field]
-                    figure.add_trace(
-                        plotly.graph_objects.Scatter(
-                            x=x_data,
-                            y=y_data,
-                            name=f"{driver} - L{lap.number} - {lap}",
-                        )
-                    )
+            return lap_data
         else:
-            for driver, laps in self._app.selected_laps.items():
-                for lap in laps:
-                    lap_data = self._app.data[driver][lap.number][10:-10]
-                    section_data = lap_data[lap_data["Car Pos Norm\r\r\n"] > self.selected_section.start - sections_extend]
-                    section_data = section_data[section_data["Car Pos Norm\r\r\n"] < self.selected_section.stop + sections_extend]
-                    x_data = section_data.loc[:, x_field]
-                    y_data = section_data.loc[:, y_field]
-                    figure.add_trace(
-                        plotly.graph_objects.Scatter(
-                            x=x_data,
-                            y=y_data,
-                            name=f"{driver} - L{lap.number} - {lap}",
-                        )
+            section_data = lap_data[lap_data["Car Pos Norm\r\r\n"] > self.selected_section.start - self.sections_extend]
+            section_data = section_data[section_data["Car Pos Norm\r\r\n"] < self.selected_section.stop + self.sections_extend]
+        return section_data
+
+    def plot(self, figure: plotly.graph_objs.Figure, x_field: str, y_field: str):
+        for driver, laps in self._app.selected_laps.items():
+            for lap in laps:
+                section_data = self.get_section_data(driver, lap)
+                x_data = section_data.loc[:, x_field]
+                y_data = section_data.loc[:, y_field]
+                figure.add_trace(
+                    plotly.graph_objects.Scatter(
+                        x=x_data,
+                        y=y_data,
+                        name=f"{driver} - L{lap.number} - {lap}",
                     )
+                )
         return figure
+
+    def update_gap_table(self):
+        # max_start_time = 0
+        min_start_time = 1_000_000
+        min_end_time = 1_000_000
+        for driver, laps in self._app.selected_laps.items():
+            for lap in laps:
+                section_data = self.get_section_data(driver, lap)
+                start_time = section_data.iloc[0, section_data.columns.get_loc("Lap Time (s)\r\r\n")]
+                end_time = section_data.iloc[-1, section_data.columns.get_loc("Lap Time (s)\r\r\n")]
+                # if start_time > max_start_time:
+                #     max_start_time = start_time
+                if start_time < min_start_time:
+                    min_start_time = start_time
+                if end_time < min_end_time:
+                    min_end_time = end_time
+
+        gaps = []
+        for driver, laps in self._app.selected_laps.items():
+            for lap in laps:
+                section_data = self.get_section_data(driver, lap)
+                # start_time_gap = max_start_time - section_data.iloc[0, section_data.columns.get_loc("Lap Time (s)\r\r\n")]
+                start_time_gap = - (min_start_time - section_data.iloc[0, section_data.columns.get_loc("Lap Time (s)\r\r\n")])
+                end_time_gap = - (min_end_time - section_data.iloc[-1, section_data.columns.get_loc("Lap Time (s)\r\r\n")])
+                gaps.append([f"{driver} - L{lap.number} - {lap}", start_time_gap, end_time_gap])
+
+        self.gap_table_figure = plotly.graph_objects.Figure(
+            data=[
+                plotly.graph_objects.Table(
+                    header=dict(
+                        values=[
+                            '<b>Début</b>',
+                            '<b>Fin</b>',
+                            '<b>Delta</b>',
+                        ],
+                        align='center',
+                    ),
+                    cells=dict(
+                        values=list(zip(*gaps)),
+                        align='right',
+                    ),
+                )
+            ],
+            layout=dict(
+                height=250,
+                margin=dict(l=10, r=10, t=30, b=30),
+            )
+        )
 
     def update_track_map(self):
         self.track_map_figure.data = []

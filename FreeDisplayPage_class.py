@@ -111,7 +111,7 @@ class FreeDisplayPage:
             for driver, laps in self._app.selected_laps.items():
                 for lap in laps:
                     lap_data = self._app.data[driver][lap.number][10:-10]
-                    x_data = lap_data.loc[:, "time (s)\r\r\n"] - lap_data.loc[:, "time (s)\r\r\n"][0]
+                    x_data = lap_data.loc[:, "time (s)\r\r\n"] - lap_data.iloc[0, lap_data.columns.get_loc("time (s)\r\r\n")]
                     y_data = lap_data.loc[:, value]
                     self.time_graph_figure.add_trace(
                         plotly.graph_objects.Scatter(

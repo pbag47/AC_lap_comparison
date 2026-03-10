@@ -22,7 +22,7 @@ class LapSelectorPage:
             dropdown = dash.dcc.Dropdown(
                 [{
                     "label": dash.html.Span(
-                        [str(lap)],
+                        [f"L{lap.number} - {lap}"],
                         style={
                             'color': "red" if not lap.is_complete else "green" if lap == self._app.personal_best_lap[driver] else "white",
                         }
