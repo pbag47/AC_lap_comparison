@@ -45,8 +45,8 @@ class RankingsPage:
         for driver, laps in self._app.laps.items():
             symbols= ["circle" if lap.is_valid and lap.is_complete else "arrow-up" for lap in laps]  # "x"
             data_frame = pandas.DataFrame({
-                "number": [lap.number for lap in laps],
-                "time": [lap.lap_time for lap in laps]
+                "number": [lap.number for lap in laps if lap.is_valid],
+                "time": [lap.lap_time for lap in laps if lap.is_valid],
             })
             self.lap_times_figure.add_trace(
                 plotly.graph_objects.Scatter(
@@ -83,11 +83,11 @@ class RankingsPage:
                             ],
                             align='right',
                             fill_color=[
-                                ["red" if not lap.is_complete else "purple" if lap == self._app.best_lap else "green" if lap == self._app.personal_best_lap[driver] else "black" for lap in laps],
-                                ["red" if not lap.is_complete else "purple" if lap == self._app.best_lap else "green" if lap == self._app.personal_best_lap[driver] else "black" for lap in laps],
-                                ["red" if not lap.is_complete else "purple" if lap == self._app.best_s1 else "green" if lap == self._app.personal_best_s1[driver] else "black" for lap in laps],
-                                ["red" if not lap.is_complete else "purple" if lap == self._app.best_s2 else "green" if lap == self._app.personal_best_s2[driver] else "black" for lap in laps],
-                                ["red" if not lap.is_complete else "purple" if lap == self._app.best_s3 else "green" if lap == self._app.personal_best_s3[driver] else "black" for lap in laps],
+                                ["red" if not lap.is_valid else "purple" if lap == self._app.best_lap else "green" if lap == self._app.personal_best_lap[driver] else "black" for lap in laps],
+                                ["red" if not lap.is_valid else "purple" if lap == self._app.best_lap else "green" if lap == self._app.personal_best_lap[driver] else "black" for lap in laps],
+                                ["red" if not lap.is_valid else "purple" if lap == self._app.best_s1 else "green" if lap == self._app.personal_best_s1[driver] else "black" for lap in laps],
+                                ["red" if not lap.is_valid else "purple" if lap == self._app.best_s2 else "green" if lap == self._app.personal_best_s2[driver] else "black" for lap in laps],
+                                ["red" if not lap.is_valid else "purple" if lap == self._app.best_s3 else "green" if lap == self._app.personal_best_s3[driver] else "black" for lap in laps],
                             ],
                         )
                     )

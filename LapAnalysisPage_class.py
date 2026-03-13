@@ -200,7 +200,6 @@ class LapAnalysisPage:
         )
 
     def get_section_data(self, driver, lap):
-        # print(driver, lap, self._app.data[driver].keys())
         lap_data = self._app.data[driver][lap.number][10:-10]
         if self.selected_section is None:
             return lap_data
@@ -246,9 +245,17 @@ class LapAnalysisPage:
                     ]
                 )
 
-        transposed_gaps = list(zip(*gaps))
-        # print(transposed_gaps)
+        if not gaps:
+            self.gap_table_figure = plotly.graph_objects.Figure(
+                data=[],
+                layout=dict(
+                    height=250,
+                    margin=dict(l=10, r=10, t=30, b=30),
+                )
+            )
+            return
 
+        transposed_gaps = list(zip(*gaps))
         self.gap_table_figure = plotly.graph_objects.Figure(
             data=[
                 plotly.graph_objects.Table(
@@ -265,13 +272,13 @@ class LapAnalysisPage:
                             transposed_gaps[0],
                             [f"{value: .3f}" for value in transposed_gaps[1]],
                             [f"{value: .3f}" for value in transposed_gaps[2]],
-                        ],  # list(zip(*gaps)),
+                        ],
                         align='right',
                         fill_color=[
                             ["black" for _ in range(len(transposed_gaps))],
                             ["green" if gap < 0 else "red" if gap > 0 else "black" for gap in transposed_gaps[1]],
                             ["green" if gap < 0 else "red" if gap > 0 else "black" for gap in transposed_gaps[2]],
-                        ], # "black",
+                        ],
                     ),
                 )
             ],

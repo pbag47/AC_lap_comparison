@@ -1,17 +1,11 @@
 
-import csv
 import dash
 import json
 import os
 import pandas
-import plotly
 
 import dash_bootstrap_components as dbc
-import dash_daq as daq
 from dash_bootstrap_templates import load_figure_template
-
-from coordinates_handler import Origin, get_sections_from_ini_file
-from data_container import main, general_time_plot, general_xy_plot, plot_trajectory, InfoContainer
 
 from FreeDisplayPage_class import FreeDisplayPage
 from Lap_class import Lap
@@ -40,6 +34,9 @@ class MainApplication:
         self.personal_best_s3: dict[str: Lap] = dict()
         self.import_laps()
         self.import_fields()
+        self.find_invalid_laps()
+        self.get_best_times()
+        self.get_personal_best_times()
         dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates@V1.0.2/dbc.min.css"
         self.app = dash.Dash(
             __name__,
@@ -65,10 +62,6 @@ class MainApplication:
                     ],
                 ),
                 dash.html.Div(id='analysis_page'),
-                dash.html.Output(
-                    id='debug_output',
-                    children='test',
-                ),
             ],
             className='dbc dbc-ag-grid',
         )
@@ -83,8 +76,6 @@ class MainApplication:
             self.laps[driver] = laps
             self.selected_laps[driver] = []
             self.data[driver] = {}
-        self.get_best_times()
-        self.get_personal_best_times()
 
     def import_fields(self):
         with open(os.path.join("config", "fields.txt"), newline="\r\n") as file:
@@ -134,6 +125,15 @@ class MainApplication:
             self.personal_best_s2[driver] = personal_best_s2
             self.personal_best_s3[driver] = personal_best_s3
 
+    def find_invalid_laps(self):
+        for driver, laps in self.laps.items():
+            self.import_data(driver, laps, [])
+            for lap in laps:
+                lap_data = self.data[driver][lap.number][10:-10]
+                lap_invalidated = lap_data["Lap Invalidated\r\r\n"].iloc[-1]
+                lap.is_valid = lap.is_complete and not lap_invalidated and lap.number > 0
+            self.import_data(driver, [], laps)
+
     def render_analysis(self, selected_tab):
         match selected_tab:
             case 'tab-rankings':
@@ -160,7 +160,7 @@ def find_best_times(laps: list[Lap]):
     best_s2 = None
     best_s3 = None
     for lap in laps:
-        if not lap.is_complete:  # \  TODO: detect invalid laps
+        if not lap.is_valid:
             continue
         if best_lap is None:
             best_lap = lap

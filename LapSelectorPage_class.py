@@ -24,7 +24,7 @@ class LapSelectorPage:
                     "label": dash.html.Span(
                         [f"L{lap.number} - {lap}"],
                         style={
-                            'color': "red" if not lap.is_complete else "green" if lap == self._app.personal_best_lap[driver] else "white",
+                            'color': "red" if not lap.is_valid else "green" if lap == self._app.personal_best_lap[driver] else "white",
                         }
                     ),
                     "value": lap.number,
@@ -55,8 +55,5 @@ class LapSelectorPage:
         new_laps = set([lap for lap in self._app.laps[driver] if lap.number in values])
         laps_to_add = new_laps - previous_laps
         laps_to_remove = previous_laps - new_laps
-        print("add: ", laps_to_add)
-        print("remove: ", laps_to_remove)
         self._app.selected_laps[driver] = [lap for lap in self._app.laps[driver] if lap.number in values]
         self._app.import_data(driver, laps_to_add, laps_to_remove)
-
