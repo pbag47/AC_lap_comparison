@@ -82,6 +82,7 @@ class MainApplication:
             driver = laps[0].driver
             self.laps[driver] = laps
             self.selected_laps[driver] = []
+            self.data[driver] = {}
         self.get_best_times()
         self.get_personal_best_times()
 
@@ -93,32 +94,23 @@ class MainApplication:
         # TODO
         pass
 
-    def import_data(self):
-        self.data = {}
-        for driver, laps in self.selected_laps.items():
-            self.data[driver] = {}
-            # with open(os.path.join('processed_data', driver + ' - Data.csv')) as file:
-            #     header_reader = csv.reader(file, delimiter=',')
-            #     names = next(header_reader)
-            #     units = next(header_reader)
-            #     headers = [f"{name} ({unit})" if unit else f"{name}" for name, unit in zip(names, units)]
-            for lap in laps:
-                next_lap = [lap_candidate for lap_candidate in self.laps[driver] if lap_candidate.number == lap.number + 1]
-                if next_lap:
-                    row_skip_selector = lambda x: not(lap.start_index <= x < next_lap[0].start_index)
-                else:
-                    row_skip_selector = lambda x: not(x >= lap.start_index)
-                with open(os.path.join('processed_data', driver + ' - Data.csv')) as file:
-                    lap_data = pandas.read_csv(
-                        file,
-                        skiprows=row_skip_selector,
-                        names=self.fields,
-                    )
-                self.data[driver][lap.number] = lap_data
-                # with open(os.path.join('config', "fields.txt"), mode="w") as file:
-                #     fields = self.data[driver][lap.number].columns.values.tolist()
-                #     file.write("\r\n".join(fields))
+    def import_data(self, driver, laps_to_add, laps_to_remove):
+        for lap in laps_to_remove:
+            del self.data[driver][lap.number]
 
+        for lap in laps_to_add:
+            next_lap = [lap_candidate for lap_candidate in self.laps[driver] if lap_candidate.number == lap.number + 1]
+            if next_lap:
+                row_skip_selector = lambda x: not(lap.start_index <= x < next_lap[0].start_index)
+            else:
+                row_skip_selector = lambda x: not(x >= lap.start_index)
+            with open(os.path.join('processed_data', driver + ' - Data.csv')) as file:
+                lap_data = pandas.read_csv(
+                    file,
+                    skiprows=row_skip_selector,
+                    names=self.fields,
+                )
+            self.data[driver][lap.number] = lap_data
 
     def set_callbacks(self):
         self.app.callback(dash.dependencies.Output('analysis_page', 'children'),
