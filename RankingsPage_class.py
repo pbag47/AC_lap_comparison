@@ -36,7 +36,9 @@ class RankingsPage:
             yaxis=dict(
                 tickformat="%M:%S.%f",
                 title=dict(text="Temps"),
-            )
+            ),
+            height = 250,
+            margin = dict(l=10, r=10, t=30, b=30),
         )
 
     def plot_lap_times_graph(self):
@@ -75,9 +77,9 @@ class RankingsPage:
                             values=[
                                 [lap.number for lap in laps],
                                 [strftime("%M:%S", gmtime(round(lap.lap_time, 3))) + "." + str(round(lap.lap_time % 1 * 1_000)) for lap in laps],
-                                [round(lap.sectors[0].sector_time, 3) for lap in laps],
-                                [round(lap.sectors[1].sector_time, 3) for lap in laps],
-                                [round(lap.sectors[2].sector_time, 3) for lap in laps],
+                                [f"{lap.sectors[0].sector_time: .3f}" for lap in laps],
+                                [f"{lap.sectors[1].sector_time: .3f}" for lap in laps],
+                                [f"{lap.sectors[2].sector_time: .3f}" for lap in laps],
                             ],
                             align='right',
                             fill_color=[
@@ -90,5 +92,9 @@ class RankingsPage:
                         )
                     )
                 ])
-            fig.update_layout(title=driver)
+            fig.update_layout(
+                title=driver,
+                margin=dict(l=10, r=10, t=30, b=30),
+                height=350,
+            )
             self.lap_time_tables[driver] = fig

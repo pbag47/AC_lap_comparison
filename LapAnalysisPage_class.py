@@ -43,13 +43,6 @@ class LapAnalysisPage:
                 )],
                 width=6,
             ),
-            # dbc.Col([
-            #     dash.dcc.Graph(
-            #         figure=self.gap_table_figure,
-            #         id='gap-table-figure',
-            #     )],
-            #     width=2,
-            # ),
             dbc.Col([
                 dash.dcc.Graph(
                     figure=self.gg_figure,
@@ -207,6 +200,7 @@ class LapAnalysisPage:
         )
 
     def get_section_data(self, driver, lap):
+        # print(driver, lap, self._app.data[driver].keys())
         lap_data = self._app.data[driver][lap.number][10:-10]
         if self.selected_section is None:
             return lap_data
@@ -231,29 +225,29 @@ class LapAnalysisPage:
         return figure
 
     def update_gap_table(self):
-        # max_start_time = 0
-        min_start_time = 1_000_000
-        min_end_time = 1_000_000
+        reference_lap = None
+        gaps = []
         for driver, laps in self._app.selected_laps.items():
             for lap in laps:
                 section_data = self.get_section_data(driver, lap)
                 start_time = section_data.iloc[0, section_data.columns.get_loc("Lap Time (s)\r\r\n")]
                 end_time = section_data.iloc[-1, section_data.columns.get_loc("Lap Time (s)\r\r\n")]
-                # if start_time > max_start_time:
-                #     max_start_time = start_time
-                if start_time < min_start_time:
-                    min_start_time = start_time
-                if end_time < min_end_time:
-                    min_end_time = end_time
+                if reference_lap is None:
+                    reference_lap = lap
+                    reference_start_time = start_time
+                    reference_end_time = end_time
+                start_time_gap = start_time - reference_start_time
+                end_time_gap = end_time - reference_end_time
+                gaps.append(
+                    [
+                        f"{driver} - L{lap.number} - {lap}",
+                        start_time_gap,
+                        end_time_gap,
+                    ]
+                )
 
-        gaps = []
-        for driver, laps in self._app.selected_laps.items():
-            for lap in laps:
-                section_data = self.get_section_data(driver, lap)
-                # start_time_gap = max_start_time - section_data.iloc[0, section_data.columns.get_loc("Lap Time (s)\r\r\n")]
-                start_time_gap = - (min_start_time - section_data.iloc[0, section_data.columns.get_loc("Lap Time (s)\r\r\n")])
-                end_time_gap = - (min_end_time - section_data.iloc[-1, section_data.columns.get_loc("Lap Time (s)\r\r\n")])
-                gaps.append([f"{driver} - L{lap.number} - {lap}", start_time_gap, end_time_gap])
+        transposed_gaps = list(zip(*gaps))
+        # print(transposed_gaps)
 
         self.gap_table_figure = plotly.graph_objects.Figure(
             data=[
@@ -267,8 +261,17 @@ class LapAnalysisPage:
                         align='center',
                     ),
                     cells=dict(
-                        values=list(zip(*gaps)),
+                        values=[
+                            transposed_gaps[0],
+                            [f"{value: .3f}" for value in transposed_gaps[1]],
+                            [f"{value: .3f}" for value in transposed_gaps[2]],
+                        ],  # list(zip(*gaps)),
                         align='right',
+                        fill_color=[
+                            ["black" for _ in range(len(transposed_gaps))],
+                            ["green" if gap < 0 else "red" if gap > 0 else "black" for gap in transposed_gaps[1]],
+                            ["green" if gap < 0 else "red" if gap > 0 else "black" for gap in transposed_gaps[2]],
+                        ], # "black",
                     ),
                 )
             ],
