@@ -237,11 +237,13 @@ class LapAnalysisPage:
                     reference_end_time = end_time
                 start_time_gap = start_time - reference_start_time
                 end_time_gap = end_time - reference_end_time
+                delta = end_time_gap - start_time_gap
                 gaps.append(
                     [
                         f"{driver} - L{lap.number} - {lap}",
                         start_time_gap,
                         end_time_gap,
+                        delta,
                     ]
                 )
 
@@ -249,7 +251,7 @@ class LapAnalysisPage:
             self.gap_table_figure = plotly.graph_objects.Figure(
                 data=[],
                 layout=dict(
-                    height=250,
+                    height=200,
                     margin=dict(l=10, r=10, t=30, b=30),
                 )
             )
@@ -261,8 +263,9 @@ class LapAnalysisPage:
                 plotly.graph_objects.Table(
                     header=dict(
                         values=[
-                            '<b>Début</b>',
-                            '<b>Fin</b>',
+                            '<b>Tour</b>',
+                            '<b>Début de secteur</b>',
+                            '<b>Fin de secteur</b>',
                             '<b>Delta</b>',
                         ],
                         align='center',
@@ -270,21 +273,24 @@ class LapAnalysisPage:
                     cells=dict(
                         values=[
                             transposed_gaps[0],
-                            [f"{value: .3f}" for value in transposed_gaps[1]],
-                            [f"{value: .3f}" for value in transposed_gaps[2]],
+                            [f"{value:+.3f}" for value in transposed_gaps[1]],
+                            [f"{value:+.3f}" for value in transposed_gaps[2]],
+                            [f"{value:+.3f}" for value in transposed_gaps[3]],
                         ],
                         align='right',
                         fill_color=[
                             ["black" for _ in range(len(transposed_gaps))],
                             ["green" if gap < 0 else "red" if gap > 0 else "black" for gap in transposed_gaps[1]],
                             ["green" if gap < 0 else "red" if gap > 0 else "black" for gap in transposed_gaps[2]],
+                            ["green" if gap < 0 else "red" if gap > 0 else "black" for gap in transposed_gaps[3]],
                         ],
                     ),
                 )
             ],
             layout=dict(
-                height=250,
-                margin=dict(l=10, r=10, t=30, b=30),
+                height=200,
+                margin=dict(l=10, r=10, t=50, b=10),
+                title=dict(text="Ecarts (s)")
             )
         )
 

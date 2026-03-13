@@ -55,9 +55,8 @@ class MainApplication:
                     active_tab='tab-rankings',
                     children=[
                         dbc.Tab(label='Classement', tab_id='tab-rankings'),
-                        dbc.Tab(label="Sélection", tab_id="tab-selection"),
-                        dbc.Tab(label='Session entière', tab_id='tab-session'),
-                        dbc.Tab(label='Tour par tour', tab_id='tab-lap'),
+                        dbc.Tab(label="Sélection des données", tab_id="tab-selection"),
+                        dbc.Tab(label='Analyse tour par tour', tab_id='tab-lap'),
                         dbc.Tab(label='Affichage libre', tab_id='tab-free')
                     ],
                 ),
@@ -140,14 +139,9 @@ class MainApplication:
                 sub_page = self.rankings_page.page
             case "tab-selection":
                 sub_page = self.lap_selection_page.get_page()
-            case 'tab-session':
-                sub_page = dash.html.Div([dash.html.H3('Session')])
             case 'tab-lap':
-                # sub_page = dash.html.Div([dash.html.H3('Lap')])
                 sub_page = self.lap_analysis_page.get_page()
             case 'tab-free':
-                # print("free display page")
-                # sub_page = dash.html.Div([dash.html.H3('Affichage libre')])
                 sub_page = self.free_display_page.get_page()
             case _:
                 sub_page = dash.html.Div([])
