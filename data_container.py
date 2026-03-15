@@ -1,23 +1,8 @@
 import csv
-import datetime
 import json
-import plotly
-import plotly.graph_objects
-import plotly.io
-import plotly.subplots
+import os
 import re
 import numpy
-
-from itertools import groupby
-
-from coordinates_handler import Origin, plot_track_map
-
-
-DEFAULT_SAMPLE_RATE = 30
-
-
-plotly.io.renderers.default = 'browser'
-plotly.io.templates.default = 'plotly_dark'
 
 
 class Container:
@@ -47,6 +32,9 @@ class InfoField:
     def __str__(self):
         return f"{self.title}: {self.value}{self.unit}"
 
+    def as_csv_row(self) -> list[str]:
+        return [self.title, str(self.value), self.unit]
+
 
 class InfoContainer(Container):
     def __init__(self, titles, units, values):
@@ -58,11 +46,13 @@ class InfoContainer(Container):
             del units[index]
             del field_values[index]
         if len(attributes_names) != len(titles) or len(attributes_names) != len(units) or len(attributes_names) != len(field_values):
-            raise ImportError("Mismatch in number of columns for InfoContainer: " +
-                              str(len(attributes_names)) + " attributes, " +
-                              str(len(titles)) + " titles, " +
-                              str(len(units)) + " units, " +
-                              str(len(field_values)) + " values")
+            raise ImportError(
+                "Mismatch in number of columns for InfoContainer: " +
+                str(len(attributes_names)) + " attributes, " +
+                str(len(titles)) + " titles, " +
+                str(len(units)) + " units, " +
+                str(len(field_values)) + " values"
+            )
         for attribute_name, title, unit, value in zip(attributes_names, titles, units, field_values):
             setattr(self, attribute_name, InfoField(title, unit, value))
 
@@ -71,6 +61,13 @@ class InfoContainer(Container):
         for attribute_name, attribute_value in vars(self).items():
             output_str += f"\n\t{attribute_value}"
         return output_str
+
+    def save_as_csv(self):
+        info_file_path = os.path.join("processed_data", self.driver.value + " - Info.csv")
+        with open(info_file_path, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            for info_field in vars(self).values():
+                writer.writerow(info_field.as_csv_row())
 
     @staticmethod
     def _get_values(values: list[str]):
@@ -111,16 +108,11 @@ class DataField:
                 counter += 1
             except json.decoder.JSONDecodeError:
                 pass
-        filtered_values_list = []
-        filtered_indices_list = []
-        counter = 0
-        for value, group in groupby(values_list):
-            filtered_values_list.append(value)
-            filtered_indices_list.append(indices_list[counter])
-            number_of_repetitions = len(list(group))
-            counter += number_of_repetitions
-        self.values = numpy.array(filtered_values_list)
-        self.indices = numpy.array(filtered_indices_list)
+        self.values = numpy.array(values_list)
+        self.indices = numpy.array(indices_list)
+
+    def get_sample_rate(self):
+        return self.sample_rate["current"]
 
     def __getitem__(self, requested_index: tuple[int | slice, int]):
         if self.sample_rate is None:
@@ -153,19 +145,18 @@ class DataContainer(Container):
             except IndexError:
                 pass
         if len(attributes_names) != len(titles) or len(attributes_names) != len(units) or len(attributes_names) != len(values):
-            raise ImportError("Mismatch in number of columns for DataContainer: " +
-                              str(len(attributes_names)) + " attributes, " +
-                              str(len(titles)) + " titles, " +
-                              str(len(units)) + " units, " +
-                              str(len(values)) + " values columns")
+            raise ImportError(
+                "Mismatch in number of columns for DataContainer: " +
+                str(len(attributes_names)) + " attributes, " +
+                str(len(titles)) + " titles, " +
+                str(len(units)) + " units, " +
+                str(len(values)) + " values columns"
+            )
         for attribute_name, title, unit, value_column in zip(attributes_names, titles, units, values):
             setattr(self, attribute_name, DataField(title, unit, value_column))
 
-    def get_channel_names(self):
-        return [key for key in vars(self).keys()]
-
-    def get_channel_titles(self):
-        return [channel.title for _, channel in vars(self).items()]
+    def get_channels_dict(self) -> dict[str: DataField]:
+        return vars(self)
 
     def get_title_name_pairs(self):
         return [dict(label=channel.title, value=name) for name, channel in vars(self).items()]
@@ -184,8 +175,10 @@ class DataContainer(Container):
                 attribute_list = [(name, field) for name, field in vars(self).items() if field.title == title]
                 attribute_name = attribute_list[0][0]
                 attribute = attribute_list[0][1]
-                attribute.sample_rate = dict(default=default_sample_rate,
-                                             current=decoder.decode(sample_rate_str))
+                attribute.sample_rate = dict(
+                    default=default_sample_rate,
+                    current=decoder.decode(sample_rate_str)
+                )
                 setattr(self, attribute_name, attribute)
 
     def get_time_scales(self) -> dict:
@@ -193,8 +186,20 @@ class DataContainer(Container):
         sample_rates = numpy.unique([field.sample_rate['current'] for _, field in vars(self).items()])
         max_time = self.time.values[-1]
         for sample_rate in sample_rates:
-            time_scales[sample_rate] = numpy.arange(start=0, stop=max_time+0.1, step=1/sample_rate)
+            time_scales[sample_rate] = numpy.arange(start=0, stop=max_time+(1/(2*sample_rate)), step=1/sample_rate)
         return time_scales
+
+    def save_as_csv(self, info: InfoContainer):
+        data_file_path = os.path.join("processed_data", info.driver.value + " - Data.csv")
+        with open(data_file_path, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            header_row = [data_field.title for data_field in vars(self).values()]
+            units_row = [data_field.unit for data_field in vars(self).values()]
+            writer.writerow(header_row)
+            writer.writerow(units_row)
+            for row_number in range(len(self.time.values)):
+                row = [data_field.values[row_number] for data_field in vars(self).values()]
+                writer.writerow(row)
 
     def __str__(self):
         output_str = 'DataContainer:'
@@ -203,41 +208,7 @@ class DataContainer(Container):
         return output_str
 
 
-class Lap:
-    class Sector:
-        def __init__(self,
-                     number: int,
-                     time: float,  # (s)
-                     ):
-            self.number: int = number
-            self.sector_time: float = time
-
-        def __str__(self) -> str:
-            return f"S{self.number:.0f}: {self.sector_time:.3f}"
-
-    def __init__(self,
-                 number: int = 0,
-                 driver: str = '_-driver-_',
-                 ):
-        self.number: int = number
-        self.driver: str = driver
-        self.lap_time: float = 0.0  # (s)
-        self.is_valid: bool = False
-        self.sectors: list[Lap.Sector] = []
-
-    def set_times(self, sector_times: 3*[float]):
-        self.sectors = [self.Sector(number=1, time=sector_times[0]),
-                        self.Sector(number=2, time=sector_times[1]),
-                        self.Sector(number=3, time=sector_times[2]),
-                        ]
-        self.lap_time = sum(sector_times)
-
-    def __str__(self) -> str:
-        minutes, seconds = divmod(self.lap_time, 60)
-        return f'{minutes:.0f}:{seconds:.3f}'
-
-
-def main(data_file: str):
+def import_raw_data(data_file: str):
     with open(data_file, 'r') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         row = next(csv_reader)
@@ -267,225 +238,18 @@ def main(data_file: str):
         # Invert x and y coordinates so x+ points towards east and y+ points towards north
         data.car_coord_x.values = - data.car_coord_x.values
         data.car_coord_y.values = - data.car_coord_y.values
-    return header, info, data
-
-
-def plot_3d_trajectory(data: DataContainer, figure):
-    figure.add_trace(plotly.graph_objects.Scatter3d(x=data.car_coord_x.values,
-                                                    y=data.car_coord_y.values,
-                                                    z=data.car_coord_z.values,)
-                     )
-    figure.update_layout(scene=dict(aspectmode='data',
-                                    aspectratio=dict(x=1, y=1, z=1)
-                                    ),
-                         )
-
-
-def plot_trajectory(data: DataContainer, figure):
-    figure.add_trace(plotly.graph_objects.Scatter(x=data.car_coord_x.values,
-                                                  y=data.car_coord_y.values,
-                                                  )
-                     )
-    figure.update_yaxes(scaleanchor="x", scaleratio=1)
-
-
-def get_laps(data: DataContainer, driver: str) -> list[Lap]:
-    number_of_sectors, _ = divmod(len(data.last_sector_time.values) - 1, 3)
-    number_of_laps, _ = divmod(number_of_sectors, 3)
-    laps = []
-    start_index = 3
-    step = 3
-    sectors_per_lap = 3
-    for lap_index in range(number_of_laps):
-        lap = Lap(number=lap_index, driver=driver)
-        sector_times = data.last_sector_time.values[slice(start_index + (step*sectors_per_lap*lap_index), start_index + (step*sectors_per_lap*(lap_index+1)), step)].tolist()
-        lap.set_times(sector_times)
-        laps.append(lap)
-    return laps
-
-
-def plot_sector_times(sector_times_array: numpy.ndarray, figure: plotly.graph_objects.Figure):
-    figure.add_trace(plotly.graph_objects.Scatter(x=sector_times_array[1, [i for i in range(sector_times_array.shape[1]) if i % 3 == 0]],
-                                                  y=sector_times_array[3, [i for i in range(sector_times_array.shape[1]) if i % 3 == 0]],
-                                                  name='Sector times 1, local indexing',
-                                                  showlegend=True,
-                                                  line=dict(shape='hv')
-                                                  ),
-                     )
-    figure.add_trace(plotly.graph_objects.Scatter(x=sector_times_array[1, [i for i in range(sector_times_array.shape[1]) if i % 3 == 1]],
-                                                  y=sector_times_array[3, [i for i in range(sector_times_array.shape[1]) if i % 3 == 1]],
-                                                  name='Sector times 2, local indexing',
-                                                  showlegend=True,
-                                                  line=dict(shape='hv')
-                                                  ),
-                     )
-    figure.add_trace(plotly.graph_objects.Scatter(x=sector_times_array[1, [i for i in range(sector_times_array.shape[1]) if i % 3 == 2]],
-                                                  y=sector_times_array[3, [i for i in range(sector_times_array.shape[1]) if i % 3 == 2]],
-                                                  name='Sector times 3, local indexing',
-                                                  showlegend=True,
-                                                  line=dict(shape='hv')
-                                                  ),
-                     )
-
-
-def plot_car_pos_norm_vs_lap_distance(data: DataContainer, time_scales):
-    figure = plotly.subplots.make_subplots(rows=3, cols=1)
-
-    ld_default_time_indices = data.lap_distance.convert_indices(data.lap_distance.indices,
-                                                                data.lap_distance.sample_rate['current'],
-                                                                data.lap_distance.sample_rate['default'])
-    cpn_default_time_indices = data.car_pos_norm.convert_indices(data.car_pos_norm.indices,
-                                                                 data.car_pos_norm.sample_rate['current'],
-                                                                 data.car_pos_norm.sample_rate['default'])
-
-    default_time_indices = numpy.union1d(ld_default_time_indices, cpn_default_time_indices)
-    time_indices = default_time_indices[default_time_indices < len(time_scales[data.lap_distance.sample_rate['default']])]
-    time_values = time_scales[data.lap_distance.sample_rate['default']][time_indices]
-    ld_values = data.lap_distance[(time_indices, data.lap_distance.sample_rate['default'])]
-    cpn_values = data.car_pos_norm[(time_indices, data.car_pos_norm.sample_rate['default'])]
-    lap_number_values = data.lap_number[(time_indices, data.lap_number.sample_rate['default'])]
-
-    figure.add_trace(plotly.graph_objects.Scatter(x=time_values,
-                                                  y=ld_values,
-                                                  name='Lap distance vs time',
-                                                  showlegend=True,
-                                                  line=dict(shape='hv')
-                                                  ),
-                     row=1,
-                     col=1,
-                     )
-
-    figure.add_trace(plotly.graph_objects.Scatter(
-                            x=time_values,
-                            y=cpn_values,
-                            name='Car Pos Norm vs time',
-                            showlegend=True,
-                            line=dict(shape='hv')
-                        ),
-                        row=2,
-                        col=1,
-                    )
-    figure.add_trace(plotly.graph_objects.Scatter(
-                            x=time_values,
-                            y=lap_number_values,
-                            name='Lap number vs time',
-                            showlegend=True,
-                            line=dict(shape='hv')
-                        ),
-                        row=2,
-                        col=1,
-                    )
-
-    figure.add_trace(plotly.graph_objects.Scatter(
-                            x=numpy.arange(len(time_values)),
-                            y=time_values,
-                            name='Time indices',
-                            showlegend=True,
-                            line=dict(shape='hv')
-                        ),
-                        row=3,
-                        col=1,
-                    )
-
-    figure.show()
-
-
-def general_xy_plot(figure: plotly.graph_objects.Figure,
-                    data: DataContainer,
-                    x_channel_name: str,
-                    y_channel_name: str):
-    x_axis_data = getattr(data, x_channel_name)
-    y_axis_data = getattr(data, y_channel_name)
-    x_axis_time_indices = x_axis_data.convert_indices(x_axis_data.indices,
-                                                      x_axis_data.sample_rate['current'],
-                                                      x_axis_data.sample_rate['default'])
-    y_axis_time_indices = y_axis_data.convert_indices(y_axis_data.indices,
-                                                      y_axis_data.sample_rate['current'],
-                                                      y_axis_data.sample_rate['default'])
-    indices = numpy.union1d(x_axis_time_indices, y_axis_time_indices)
-    x_values = x_axis_data[(indices, x_axis_data.sample_rate['default'])]
-    y_values = y_axis_data[(indices, y_axis_data.sample_rate['default'])]
-    figure.add_trace(plotly.graph_objects.Scatter(x=x_values,
-                                                  y=y_values,
-                                                  name=f'{y_axis_data.title} vs {x_axis_data.title}',
-                                                  showlegend=True,
-                                                  line=dict(shape='hv')
-                                                  ),
-                     )
-    figure.update_layout(xaxis=dict(title=f'{x_axis_data.title} ({x_axis_data.unit})'),
-                         yaxis=dict(title=f'{y_axis_data.title} ({y_axis_data.unit})',),)
-
-
-def general_time_plot(figure: plotly.graph_objects.Figure,
-                      data: DataContainer,
-                      time_scales: dict,
-                      y_channel_name: str):
-    y_axis_data = getattr(data, y_channel_name)
-    x_values = time_scales[y_axis_data.sample_rate['current']][y_axis_data.indices]
-    y_values = y_axis_data.values
-    figure.add_trace(plotly.graph_objects.Scatter(x=x_values,
-                                                  y=y_values,
-                                                  name=f'{y_axis_data.title} vs time',
-                                                  showlegend=True,
-                                                  line=dict(shape='hv')
-                                                  ),
-                     )
-    figure.update_layout(xaxis=dict(title='Time (s)',),
-                         yaxis=dict(title=f'{y_axis_data.title} ({y_axis_data.unit})',),)
-
-
-# def get_lap_times(data):
-#     pass
-
-    # figure.add_trace(plotly.graph_objects.Scatter(x=[i for i in range(len(data.lap_time.values))],
-    #                                               y=data.lap_time.values,
-    #                                               )
-    #                  )
-
-
-def debug():
-    source_file = 'data/corvette_c7_laguna_seca_example.csv'
-    # source_file = 'data/gps_calibration.csv'
-    # source_file = 'data/turn_in_out_calibration.csv'
-    h, info_container, data_container = main(source_file)
-    # print(info_container)
-    Origin.setup("config/reference_points.txt")
-    data_container.set_sample_rates()
-    data_time_scales = data_container.get_time_scales()
-    print(data_container)
-    plot_car_pos_norm_vs_lap_distance(data_container, data_time_scales)
-
-    return data_container, data_time_scales
+    data.set_sample_rates()
+    time_scales = data.get_time_scales()
+    return header, info, data, time_scales
 
 
 if __name__ == '__main__':
-    # source_file = 'data/corvette_c7_laguna_seca_example.csv'
-    source_file = 'data/04072025-204315-Chuck-ks_audi_a1s1-ks_laguna_seca.csv'
-    # source_file = 'data/gps_calibration.csv'
-    # source_file = 'data/turn_in_out_calibration.csv'
-    h, info_container, data_container = main(source_file)
-    Origin.setup("config/reference_points.txt")
-    data_container.set_sample_rates()
-    data_time_scales = data_container.get_time_scales()
+    # source_file = 'raw_data/corvette_c7_laguna_seca_example.csv'
+    source_file = 'raw_data/04072025-204315-Chuck-ks_audi_a1s1-ks_laguna_seca.csv'
+    # source_file = 'raw_data/gps_calibration.csv'
+    # source_file = 'raw_data/turn_in_out_calibration.csv'
+    h, info_container, data_container, data_time_scales = import_raw_data(source_file)
     print(h)
     print(info_container)
     print(data_container)
-    laps_list = get_laps(data_container, h['Driver'])
-    print([(lap.lap_time, lap.is_valid, lap.number) for lap in laps_list])
 
-    print(data_container.lap_invalidated)
-    # plot_car_pos_norm_vs_lap_distance(data_container, data_time_scales)
-    # fig = plotly.graph_objects.Figure()
-    # general_xy_plot(fig, data_container, x_channel_name='lap_distance', y_channel_name='tire_temp_middle_fl')
-    # general_time_plot(fig, data_container, data_time_scales, 'tire_temp_inner_fl')
-    # general_time_plot(fig, data_container, data_time_scales, 'tire_temp_middle_fl')
-    # general_time_plot(fig, data_container, data_time_scales, 'tire_temp_outer_fl')
-    # general_time_plot(fig, data_container, data_time_scales, 'lap_time')
-
-    # # plot_track_map(fig)
-    # plot_trajectory(data_container, fig)
-    # sector_times = get_sector_times(data_container, time_scales=data_time_scales)
-    # plot_sector_times(sector_times, fig)
-    # plot_lap_times(data_container, fig)
-    #
-    # fig.show()

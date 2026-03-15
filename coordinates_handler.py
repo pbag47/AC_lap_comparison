@@ -4,7 +4,6 @@ from typing import Literal, Type
 
 import configparser
 import lat_lon_parser
-import plotly
 
 
 ALTITUDE = 254
@@ -18,6 +17,7 @@ class Origin:
     latitude = 0
     longitude = 0
     altitude = 0
+    error = 0
 
     @classmethod
     def setup(cls, reference_points_file_name: str):
@@ -28,16 +28,12 @@ class Origin:
         origin2 = Coordinates(x=0, y=0, z=0)
         origin2.latitude = p2.latitude - rad2deg(p2.y / EARTH_RADIUS)
         origin2.longitude = p2.longitude - rad2deg(p2.x / EARTH_RADIUS) / cos(deg2rad(p2.latitude))
-        error = gps_distance(origin1, origin2)
-        print("Origin precision:", error, "m")
+        cls.error = gps_distance(origin1, origin2)
 
         # cls.latitude = origin1.latitude
         # cls.longitude = origin1.longitude
-
         cls.latitude = origin2.latitude
         cls.longitude = origin2.longitude
-
-        print("Origin:", cls.latitude, cls.longitude)
 
 
 class Coordinates:
@@ -83,30 +79,6 @@ class Section:
         else:
             self.image = None
 
-    def plot(self, figure: plotly.graph_objects.Figure):
-        if self.image is not None:
-            width = abs(dx(self.top_left, self.bottom_right, method='cartesian'))
-            height = abs(dy(self.top_left, self.bottom_right, method='cartesian'))
-            figure.add_layout_image(
-                x=self.top_left.x,
-                y=self.bottom_right.y,
-                sizex=width,
-                sizey=height,
-                xref="x",
-                yref="y",
-                opacity=1.0,
-                layer="below",
-                source=self.image,
-                sizing='stretch',
-                xanchor="left",
-                yanchor="bottom",
-            )
-            figure.update_xaxes(range=[self.top_left.x, self.top_left.x + width])
-            figure.update_yaxes(range=[self.bottom_right.y, self.bottom_right.y + height])
-        figure.update_yaxes(scaleanchor="x", scaleratio=1)
-
-        # figure.update_layout(template="plotly_dark")
-
 
 def cartesian_distance(p1: Coordinates, p2: Coordinates):
     return sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2 + (p1.z - p2.z)**2)
@@ -144,28 +116,23 @@ def dy(p1: Coordinates, p2: Coordinates, method: Literal['cartesian', 'gps'] = '
         raise ValueError('Method must be either cartesian or gps')
 
 
-def _get_offset_point(point: Coordinates, x_offset: float, y_offset: float) -> Coordinates:
-    offset_point = Coordinates(x=point.x + x_offset,
-                               y=point.y + y_offset,
-                               z=point.z,
-                               latitude=point.latitude + rad2deg(y_offset / EARTH_RADIUS),
-                               longitude=point.longitude + rad2deg(x_offset / EARTH_RADIUS) / cos(deg2rad(point.latitude)))
-    return offset_point
-
-
 def get_reference_data(file_name: str) -> tuple[Coordinates, Coordinates]:
     with open(file_name, 'r') as file:
         _ = file.readline()  # Header
         p1_data = file.readline().split()
         p2_data = file.readline().split()
-    p1 = Coordinates(x=float(p1_data[0]),
-               y=float(p1_data[1]),
-               latitude=lat_lon_parser.parse(p1_data[2]),
-               longitude=lat_lon_parser.parse(p1_data[3]))
-    p2 = Coordinates(x=float(p2_data[0]),
-               y=float(p2_data[1]),
-               latitude=lat_lon_parser.parse(p2_data[2]),
-               longitude=lat_lon_parser.parse(p2_data[3]))
+    p1 = Coordinates(
+        x=float(p1_data[0]),
+        y=float(p1_data[1]),
+        latitude=lat_lon_parser.parse(p1_data[2]),
+        longitude=lat_lon_parser.parse(p1_data[3])
+    )
+    p2 = Coordinates(
+        x=float(p2_data[0]),
+        y=float(p2_data[1]),
+        latitude=lat_lon_parser.parse(p2_data[2]),
+        longitude=lat_lon_parser.parse(p2_data[3])
+    )
     return p1, p2
 
 
@@ -198,19 +165,24 @@ def get_sections_from_ini_file(ini_file_name: str = "config/sections/sections.in
     sections_str = config_parser.sections()
     sections = []
     for section_str in sections_str:
-        section = Section(title=config_parser[section_str]['TEXT'],
-                            start=float(config_parser[section_str]['IN']),
-                            stop=float(config_parser[section_str]['OUT']),
-                            )
+        section = Section(
+            title=config_parser[section_str]['TEXT'],
+            start=float(config_parser[section_str]['IN']),
+            stop=float(config_parser[section_str]['OUT']),
+        )
         if section.title in name:
             index = name.index(section.title)
-            top_left = Coordinates(latitude=lat_lon_parser.parse(tl_lat[index]),
-                                   longitude=lat_lon_parser.parse(tl_lon[index]))
+            top_left = Coordinates(
+                latitude=lat_lon_parser.parse(tl_lat[index]),
+                longitude=lat_lon_parser.parse(tl_lon[index])
+            )
             top_left.get_xy_from_lat_lon()
             top_left.x += float(x_offset[index])
             top_left.y += float(y_offset[index])
-            bottom_right = Coordinates(latitude=lat_lon_parser.parse(br_lat[index]),
-                                       longitude=lat_lon_parser.parse(br_lon[index]))
+            bottom_right = Coordinates(
+                latitude=lat_lon_parser.parse(br_lat[index]),
+                longitude=lat_lon_parser.parse(br_lon[index])
+            )
             bottom_right.get_xy_from_lat_lon()
             bottom_right.x += float(x_offset[index])
             bottom_right.y += float(y_offset[index])
@@ -221,61 +193,15 @@ def get_sections_from_ini_file(ini_file_name: str = "config/sections/sections.in
     return sections
 
 
-
 def validation(file_name: str):
     p1, p2 = get_reference_data(file_name)
     d_cartesian = cartesian_distance(p1, p2)
     d_gps = gps_distance(p1, p2)
-    print("Error:", abs(d_cartesian - d_gps), "m")
-
-
-def plot_track_map(figure: plotly.graph_objects.Figure):
-    name, tl_lat, tl_lon, br_lat, br_lon, x_offset, y_offset = get_images_position()
-    for i in range(len(name)):
-        top_left = Coordinates(latitude=lat_lon_parser.parse(tl_lat[i]),
-                                longitude=lat_lon_parser.parse(tl_lon[i]))
-        top_left.get_xy_from_lat_lon()
-        top_left.x += float(x_offset[i])
-        top_left.y += float(y_offset[i])
-
-        bottom_right = Coordinates(latitude=lat_lon_parser.parse(br_lat[i]),
-                                   longitude=lat_lon_parser.parse(br_lon[i]))
-        bottom_right.get_xy_from_lat_lon()
-        bottom_right.x += float(x_offset[i])
-        bottom_right.y += float(y_offset[i])
-
-        image_file_name = 'config/sections/' + name[i] + '.png'
-        with Image.open(image_file_name) as image:
-            width = abs(dx(top_left, bottom_right, method='cartesian'))
-            height = abs(dy(top_left, bottom_right, method='cartesian'))
-            figure.add_layout_image(
-                x=top_left.x,
-                y=bottom_right.y,
-                sizex=width,
-                sizey=height,
-                xref="x",
-                yref="y",
-                opacity=1.0,
-                layer="below",
-                source=image,
-                sizing='stretch',
-                xanchor="left",
-                yanchor="bottom",
-            )
-        figure.add_trace(plotly.graph_objects.Scatter(x=[top_left.x, bottom_right.x],
-                                                      y=[top_left.y, bottom_right.y],
-                                                      name=name[i]))
-    figure.update_yaxes(scaleanchor="x", scaleratio=1)
-    figure.update_layout(template="plotly_dark")
+    print(f"Error between reference points: {abs(d_cartesian - d_gps): .3f} m")
+    print(f"Origin GPS coordinates: {Origin.latitude: .3f}°N, {Origin.longitude: .3f}°E")
+    print(f"Origin precision: {Origin.error: .3f} m")
 
 
 if __name__ == '__main__':
-    validation("config/reference_points.txt")
     Origin.setup("config/reference_points.txt")
-    fig = plotly.graph_objects.Figure()
-
-    # track_sections = get_sections_from_ini_file()
-    # for track_section in track_sections:
-    #     track_section.plot(fig)
-    plot_track_map(fig)
-    fig.show()
+    validation("config/reference_points.txt")
