@@ -3,8 +3,7 @@ import dash
 import pandas
 import plotly
 
-from time import strftime
-from time import gmtime
+from time import strftime, gmtime
 
 
 class RankingsPage:

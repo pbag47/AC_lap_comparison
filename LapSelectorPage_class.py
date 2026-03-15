@@ -24,7 +24,7 @@ class LapSelectorPage:
                     "label": dash.html.Span(
                         [f"L{lap.number} - {lap}"],
                         style={
-                            'color': "red" if not lap.is_valid else "green" if lap == self._app.personal_best_lap[driver] else "white",
+                            'color': "red" if not lap.is_valid else "green" if lap == self._app.personal_best_lap[driver] else "black",
                         }
                     ),
                     "value": lap.number,
