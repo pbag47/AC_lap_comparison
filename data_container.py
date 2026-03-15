@@ -1,18 +1,8 @@
 import csv
 import json
 import os
-import plotly
-import plotly.graph_objects
-import plotly.io
-import plotly.subplots
 import re
 import numpy
-
-from coordinates_handler import Origin
-
-
-plotly.io.renderers.default = 'browser'
-plotly.io.templates.default = 'plotly_dark'
 
 
 class Container:
@@ -192,7 +182,6 @@ class DataContainer(Container):
                 setattr(self, attribute_name, attribute)
 
     def get_time_scales(self) -> dict:
-        # TODO: Remove method
         time_scales = {}
         sample_rates = numpy.unique([field.sample_rate['current'] for _, field in vars(self).items()])
         max_time = self.time.values[-1]
@@ -219,7 +208,7 @@ class DataContainer(Container):
         return output_str
 
 
-def main(data_file: str):
+def import_raw_data(data_file: str):
     with open(data_file, 'r') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         row = next(csv_reader)
@@ -249,203 +238,9 @@ def main(data_file: str):
         # Invert x and y coordinates so x+ points towards east and y+ points towards north
         data.car_coord_x.values = - data.car_coord_x.values
         data.car_coord_y.values = - data.car_coord_y.values
-    return header, info, data
-
-
-def plot_3d_trajectory(data: DataContainer, figure):
-    figure.add_trace(
-        plotly.graph_objects.Scatter3d(
-            x=data.car_coord_x.values,
-            y=data.car_coord_y.values,
-            z=data.car_coord_z.values,
-        )
-    )
-    figure.update_layout(
-        scene=dict(
-            aspectmode='raw_data',
-            aspectratio=dict(x=1, y=1, z=1)
-        ),
-    )
-
-
-def plot_trajectory(data: DataContainer, figure):
-    figure.add_trace(
-        plotly.graph_objects.Scatter(
-            x=data.car_coord_x.values,
-            y=data.car_coord_y.values,
-        )
-    )
-    figure.update_yaxes(scaleanchor="x", scaleratio=1)
-
-
-def plot_sector_times(sector_times_array: numpy.ndarray, figure: plotly.graph_objects.Figure):
-    figure.add_trace(
-        plotly.graph_objects.Scatter(
-            x=sector_times_array[1, [i for i in range(sector_times_array.shape[1]) if i % 3 == 0]],
-            y=sector_times_array[3, [i for i in range(sector_times_array.shape[1]) if i % 3 == 0]],
-            name='Sector times 1, local indexing',
-            showlegend=True,
-            line=dict(shape='hv')
-        ),
-    )
-    figure.add_trace(
-        plotly.graph_objects.Scatter(
-            x=sector_times_array[1, [i for i in range(sector_times_array.shape[1]) if i % 3 == 1]],
-            y=sector_times_array[3, [i for i in range(sector_times_array.shape[1]) if i % 3 == 1]],
-            name='Sector times 2, local indexing',
-            showlegend=True,
-            line=dict(shape='hv')
-        ),
-    )
-    figure.add_trace(
-        plotly.graph_objects.Scatter(
-            x=sector_times_array[1, [i for i in range(sector_times_array.shape[1]) if i % 3 == 2]],
-            y=sector_times_array[3, [i for i in range(sector_times_array.shape[1]) if i % 3 == 2]],
-            name='Sector times 3, local indexing',
-            showlegend=True,
-            line=dict(shape='hv')
-        ),
-    )
-
-
-def plot_car_pos_norm_vs_lap_distance(data: DataContainer, time_scales):
-    figure = plotly.subplots.make_subplots(rows=3, cols=1)
-
-    ld_default_time_indices = data.lap_distance.convert_indices(
-        data.lap_distance.indices,
-        data.lap_distance.sample_rate['current'],
-        data.lap_distance.sample_rate['default']
-    )
-    cpn_default_time_indices = data.car_pos_norm.convert_indices(
-        data.car_pos_norm.indices,
-        data.car_pos_norm.sample_rate['current'],
-        data.car_pos_norm.sample_rate['default']
-    )
-    default_time_indices = numpy.union1d(ld_default_time_indices, cpn_default_time_indices)
-    time_indices = default_time_indices[default_time_indices < len(time_scales[data.lap_distance.sample_rate['default']])]
-    time_values = time_scales[data.lap_distance.sample_rate['default']][time_indices]
-    ld_values = data.lap_distance[(time_indices, data.lap_distance.sample_rate['default'])]
-    cpn_values = data.car_pos_norm[(time_indices, data.car_pos_norm.sample_rate['default'])]
-    lap_number_values = data.lap_number[(time_indices, data.lap_number.sample_rate['default'])]
-
-    figure.add_trace(
-        plotly.graph_objects.Scatter(
-            x=time_values,
-            y=ld_values,
-            name='Lap distance vs time',
-            showlegend=True,
-            line=dict(shape='hv')
-        ),
-        row=1,
-        col=1,
-    )
-
-    figure.add_trace(
-        plotly.graph_objects.Scatter(
-            x=time_values,
-            y=cpn_values,
-            name='Car Pos Norm vs time',
-            showlegend=True,
-            line=dict(shape='hv')
-        ),
-        row=2,
-        col=1,
-    )
-    figure.add_trace(
-        plotly.graph_objects.Scatter(
-            x=time_values,
-            y=lap_number_values,
-            name='Lap number vs time',
-            showlegend=True,
-            line=dict(shape='hv')
-        ),
-        row=2,
-        col=1,
-    )
-
-    figure.add_trace(
-        plotly.graph_objects.Scatter(
-            x=numpy.arange(len(time_values)),
-            y=time_values,
-            name='Time indices',
-            showlegend=True,
-            line=dict(shape='hv')
-        ),
-        row=3,
-        col=1,
-    )
-
-    figure.show()
-
-
-def general_xy_plot(figure: plotly.graph_objects.Figure,
-                    data: DataContainer,
-                    x_channel_name: str,
-                    y_channel_name: str):
-    x_axis_data = getattr(data, x_channel_name)
-    y_axis_data = getattr(data, y_channel_name)
-    x_axis_time_indices = x_axis_data.convert_indices(
-        x_axis_data.indices,
-        x_axis_data.sample_rate['current'],
-        x_axis_data.sample_rate['default']
-    )
-    y_axis_time_indices = y_axis_data.convert_indices(
-        y_axis_data.indices,
-        y_axis_data.sample_rate['current'],
-        y_axis_data.sample_rate['default']
-    )
-    indices = numpy.union1d(x_axis_time_indices, y_axis_time_indices)
-    x_values = x_axis_data[(indices, x_axis_data.sample_rate['default'])]
-    y_values = y_axis_data[(indices, y_axis_data.sample_rate['default'])]
-    figure.add_trace(
-        plotly.graph_objects.Scatter(
-            x=x_values,
-            y=y_values,
-            name=f'{y_axis_data.title} vs {x_axis_data.title}',
-            showlegend=True,
-            line=dict(shape='hv')
-        ),
-    )
-    figure.update_layout(
-        xaxis=dict(title=f'{x_axis_data.title} ({x_axis_data.unit})'),
-        yaxis=dict(title=f'{y_axis_data.title} ({y_axis_data.unit})',),
-    )
-
-
-def general_time_plot(figure: plotly.graph_objects.Figure,
-                      data: DataContainer,
-                      time_scales: dict,
-                      y_channel_name: str):
-    y_axis_data = getattr(data, y_channel_name)
-    x_values = time_scales[y_axis_data.sample_rate['current']][y_axis_data.indices]
-    y_values = y_axis_data.values
-    figure.add_trace(
-        plotly.graph_objects.Scatter(
-            x=x_values,
-            y=y_values,
-            name=f'{y_axis_data.title} vs time',
-            showlegend=True,
-            line=dict(shape='hv')
-        ),
-    )
-    figure.update_layout(
-        xaxis=dict(title='Time (s)',),
-        yaxis=dict(title=f'{y_axis_data.title} ({y_axis_data.unit})',),
-    )
-
-
-def debug():
-    source_file = 'raw_data/corvette_c7_laguna_seca_example.csv'
-    # source_file = 'raw_data/gps_calibration.csv'
-    # source_file = 'raw_data/turn_in_out_calibration.csv'
-    h, info_container, data_container = main(source_file)
-    # print(info_container)
-    Origin.setup("config/reference_points.txt")
-    data_container.set_sample_rates()
-    data_time_scales = data_container.get_time_scales()
-    print(data_container)
-    plot_car_pos_norm_vs_lap_distance(data_container, data_time_scales)
-    return data_container, data_time_scales
+    data.set_sample_rates()
+    time_scales = data.get_time_scales()
+    return header, info, data, time_scales
 
 
 if __name__ == '__main__':
@@ -453,29 +248,8 @@ if __name__ == '__main__':
     source_file = 'raw_data/04072025-204315-Chuck-ks_audi_a1s1-ks_laguna_seca.csv'
     # source_file = 'raw_data/gps_calibration.csv'
     # source_file = 'raw_data/turn_in_out_calibration.csv'
-    h, info_container, data_container = main(source_file)
-    Origin.setup("config/reference_points.txt")
-    data_container.set_sample_rates()
-    data_time_scales = data_container.get_time_scales()
+    h, info_container, data_container, data_time_scales = import_raw_data(source_file)
     print(h)
     print(info_container)
     print(data_container)
 
-
-    # print([(lap.lap_time, lap.is_valid, lap.number) for lap in laps_list])
-    # print(data_container.lap_invalidated)
-    # plot_car_pos_norm_vs_lap_distance(data_container, data_time_scales)
-    # fig = plotly.graph_objects.Figure()
-    # general_xy_plot(fig, data_container, x_channel_name='lap_distance', y_channel_name='tire_temp_middle_fl')
-    # general_time_plot(fig, data_container, data_time_scales, 'tire_temp_inner_fl')
-    # general_time_plot(fig, data_container, data_time_scales, 'tire_temp_middle_fl')
-    # general_time_plot(fig, data_container, data_time_scales, 'tire_temp_outer_fl')
-    # general_time_plot(fig, data_container, data_time_scales, 'lap_time')
-
-    # # plot_track_map(fig)
-    # plot_trajectory(data_container, fig)
-    # sector_times = get_sector_times(data_container, time_scales=data_time_scales)
-    # plot_sector_times(sector_times, fig)
-    # plot_lap_times(data_container, fig)
-    #
-    # fig.show()

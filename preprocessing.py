@@ -1,10 +1,8 @@
-import csv
 import json
 import os
 from itertools import groupby
 
-from data_container import DataContainer, InfoContainer, InfoField
-from coordinates_handler import Origin
+from data_container import DataContainer, InfoContainer, InfoField, import_raw_data
 from Lap_class import Lap
 
 
@@ -76,48 +74,13 @@ def get_laps(info: InfoContainer, data: DataContainer) -> list[Lap]:
     return laps
 
 
-def main(data_file: str):
-    with open(data_file, 'r') as csv_file:
-        csv_reader = csv.reader(csv_file, delimiter=',')
-        row = next(csv_reader)
-        header = dict()
-        while row:
-            key, value = row
-            header[key] = value
-            row = next(csv_reader)
-        while not row:
-            row = next(csv_reader)
-        titles = row
-        units = next(csv_reader)
-        values = next(csv_reader)
-        info = InfoContainer(titles, units, values)
-        row = next(csv_reader)
-        while not row:
-            row = next(csv_reader)
-        titles = row
-        units = next(csv_reader)
-        for i, row in enumerate(csv_reader):
-            if i == 0:
-                data = [[] for _ in range(len(row))]
-            for j, col in enumerate(row):
-                data[j].append(col)
-        data = DataContainer(titles, units, data)
-
-        # Invert x and y coordinates so x+ points towards east and y+ points towards north
-        data.car_coord_x.values = - data.car_coord_x.values
-        data.car_coord_y.values = - data.car_coord_y.values
-    return header, info, data
-
-
 if __name__ == '__main__':
     source_file = 'raw_data/corvette_c7_laguna_seca_example.csv'
     # source_file = 'raw_data/04072025-204315-Chuck-ks_audi_a1s1-ks_laguna_seca.csv'
     # source_file = 'raw_data/gps_calibration.csv'
     # source_file = 'raw_data/turn_in_out_calibration.csv'
 
-    h, info_container, data_container = main(source_file)
-    Origin.setup("config/reference_points.txt")
-    data_container.set_sample_rates()
+    h, info_container, data_container, time_scales = import_raw_data(source_file)
     decimate_data(data_container)
     fill_data_gaps(data_container)
 
