@@ -39,7 +39,6 @@ def add_header_to_info(header: dict, info: InfoContainer):
         setattr(info, attributes_name, InfoField(attribute, "", value))
 
 
-
 def export_processed_data(info: InfoContainer, data: DataContainer):
     laps = get_laps(info, data)
     file_name = info.driver.value + " - Laps.json"

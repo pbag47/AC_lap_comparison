@@ -31,7 +31,6 @@ class Sector(SerializableObject):
         return output
 
 
-
 class Lap(SerializableObject):
     attribute_types = dict(
         number=int,
@@ -55,8 +54,6 @@ class Lap(SerializableObject):
         self.sectors: list[Sector] = []
         self.start_index: int = start_index
 
-        #TODO: self.is_valid logic
-
     def set_times(self, sector_times: 3*[float]):
         self.sectors = []
         for sector_number in range(3):
@@ -77,7 +74,6 @@ class Lap(SerializableObject):
     def __str__(self) -> str:
         minutes, seconds = divmod(self.lap_time, 60)
         return f'{minutes:.0f}:{seconds:.3f}'
-        # return f'Lap {self.number}, {minutes:.0f}:{seconds:.3f} {[str(sector) for sector in self.sectors]}'
 
     @classmethod
     def __from_json__(cls, input_dict):

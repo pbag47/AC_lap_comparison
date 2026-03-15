@@ -16,7 +16,6 @@ class RankingsPage:
         self.plot_lap_times_graph()
         self.plot_lap_times_tables()
         self.page = dash.html.Div([
-            # dash.html.H3('Analyse tour-par-tour'),
             dash.dcc.Graph(
                 figure=self.lap_times_figure,
                 id='graph-lap-times-figure',
@@ -37,8 +36,8 @@ class RankingsPage:
                 tickformat="%M:%S.%f",
                 title=dict(text="Temps"),
             ),
-            height = 250,
-            margin = dict(l=10, r=10, t=30, b=30),
+            height=250,
+            margin=dict(l=10, r=10, t=30, b=30),
         )
 
     def plot_lap_times_graph(self):

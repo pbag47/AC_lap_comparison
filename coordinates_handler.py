@@ -29,7 +29,7 @@ class Origin:
         origin2.latitude = p2.latitude - rad2deg(p2.y / EARTH_RADIUS)
         origin2.longitude = p2.longitude - rad2deg(p2.x / EARTH_RADIUS) / cos(deg2rad(p2.latitude))
         error = gps_distance(origin1, origin2)
-        print("Origin precision:", error, "m")
+        # print("Origin precision:", error, "m")
 
         # cls.latitude = origin1.latitude
         # cls.longitude = origin1.longitude
@@ -37,7 +37,7 @@ class Origin:
         cls.latitude = origin2.latitude
         cls.longitude = origin2.longitude
 
-        print("Origin:", cls.latitude, cls.longitude)
+        # print("Origin:", cls.latitude, cls.longitude)
 
 
 class Coordinates:
@@ -145,11 +145,13 @@ def dy(p1: Coordinates, p2: Coordinates, method: Literal['cartesian', 'gps'] = '
 
 
 def _get_offset_point(point: Coordinates, x_offset: float, y_offset: float) -> Coordinates:
-    offset_point = Coordinates(x=point.x + x_offset,
-                               y=point.y + y_offset,
-                               z=point.z,
-                               latitude=point.latitude + rad2deg(y_offset / EARTH_RADIUS),
-                               longitude=point.longitude + rad2deg(x_offset / EARTH_RADIUS) / cos(deg2rad(point.latitude)))
+    offset_point = Coordinates(
+        x=point.x + x_offset,
+        y=point.y + y_offset,
+        z=point.z,
+        latitude=point.latitude + rad2deg(y_offset / EARTH_RADIUS),
+        longitude=point.longitude + rad2deg(x_offset / EARTH_RADIUS) / cos(deg2rad(point.latitude))
+    )
     return offset_point
 
 
@@ -158,14 +160,18 @@ def get_reference_data(file_name: str) -> tuple[Coordinates, Coordinates]:
         _ = file.readline()  # Header
         p1_data = file.readline().split()
         p2_data = file.readline().split()
-    p1 = Coordinates(x=float(p1_data[0]),
-               y=float(p1_data[1]),
-               latitude=lat_lon_parser.parse(p1_data[2]),
-               longitude=lat_lon_parser.parse(p1_data[3]))
-    p2 = Coordinates(x=float(p2_data[0]),
-               y=float(p2_data[1]),
-               latitude=lat_lon_parser.parse(p2_data[2]),
-               longitude=lat_lon_parser.parse(p2_data[3]))
+    p1 = Coordinates(
+        x=float(p1_data[0]),
+        y=float(p1_data[1]),
+        latitude=lat_lon_parser.parse(p1_data[2]),
+        longitude=lat_lon_parser.parse(p1_data[3])
+    )
+    p2 = Coordinates(
+        x=float(p2_data[0]),
+        y=float(p2_data[1]),
+        latitude=lat_lon_parser.parse(p2_data[2]),
+        longitude=lat_lon_parser.parse(p2_data[3])
+    )
     return p1, p2
 
 
@@ -198,19 +204,24 @@ def get_sections_from_ini_file(ini_file_name: str = "config/sections/sections.in
     sections_str = config_parser.sections()
     sections = []
     for section_str in sections_str:
-        section = Section(title=config_parser[section_str]['TEXT'],
-                            start=float(config_parser[section_str]['IN']),
-                            stop=float(config_parser[section_str]['OUT']),
-                            )
+        section = Section(
+            title=config_parser[section_str]['TEXT'],
+            start=float(config_parser[section_str]['IN']),
+            stop=float(config_parser[section_str]['OUT']),
+        )
         if section.title in name:
             index = name.index(section.title)
-            top_left = Coordinates(latitude=lat_lon_parser.parse(tl_lat[index]),
-                                   longitude=lat_lon_parser.parse(tl_lon[index]))
+            top_left = Coordinates(
+                latitude=lat_lon_parser.parse(tl_lat[index]),
+                longitude=lat_lon_parser.parse(tl_lon[index])
+            )
             top_left.get_xy_from_lat_lon()
             top_left.x += float(x_offset[index])
             top_left.y += float(y_offset[index])
-            bottom_right = Coordinates(latitude=lat_lon_parser.parse(br_lat[index]),
-                                       longitude=lat_lon_parser.parse(br_lon[index]))
+            bottom_right = Coordinates(
+                latitude=lat_lon_parser.parse(br_lat[index]),
+                longitude=lat_lon_parser.parse(br_lon[index])
+            )
             bottom_right.get_xy_from_lat_lon()
             bottom_right.x += float(x_offset[index])
             bottom_right.y += float(y_offset[index])
@@ -219,7 +230,6 @@ def get_sections_from_ini_file(ini_file_name: str = "config/sections/sections.in
         section.setup()
         sections.append(section)
     return sections
-
 
 
 def validation(file_name: str):
@@ -232,14 +242,18 @@ def validation(file_name: str):
 def plot_track_map(figure: plotly.graph_objects.Figure):
     name, tl_lat, tl_lon, br_lat, br_lon, x_offset, y_offset = get_images_position()
     for i in range(len(name)):
-        top_left = Coordinates(latitude=lat_lon_parser.parse(tl_lat[i]),
-                                longitude=lat_lon_parser.parse(tl_lon[i]))
+        top_left = Coordinates(
+            latitude=lat_lon_parser.parse(tl_lat[i]),
+            longitude=lat_lon_parser.parse(tl_lon[i])
+        )
         top_left.get_xy_from_lat_lon()
         top_left.x += float(x_offset[i])
         top_left.y += float(y_offset[i])
 
-        bottom_right = Coordinates(latitude=lat_lon_parser.parse(br_lat[i]),
-                                   longitude=lat_lon_parser.parse(br_lon[i]))
+        bottom_right = Coordinates(
+            latitude=lat_lon_parser.parse(br_lat[i]),
+            longitude=lat_lon_parser.parse(br_lon[i])
+        )
         bottom_right.get_xy_from_lat_lon()
         bottom_right.x += float(x_offset[i])
         bottom_right.y += float(y_offset[i])

@@ -56,11 +56,13 @@ class InfoContainer(Container):
             del units[index]
             del field_values[index]
         if len(attributes_names) != len(titles) or len(attributes_names) != len(units) or len(attributes_names) != len(field_values):
-            raise ImportError("Mismatch in number of columns for InfoContainer: " +
-                              str(len(attributes_names)) + " attributes, " +
-                              str(len(titles)) + " titles, " +
-                              str(len(units)) + " units, " +
-                              str(len(field_values)) + " values")
+            raise ImportError(
+                "Mismatch in number of columns for InfoContainer: " +
+                str(len(attributes_names)) + " attributes, " +
+                str(len(titles)) + " titles, " +
+                str(len(units)) + " units, " +
+                str(len(field_values)) + " values"
+            )
         for attribute_name, title, unit, value in zip(attributes_names, titles, units, field_values):
             setattr(self, attribute_name, InfoField(title, unit, value))
 
@@ -153,11 +155,13 @@ class DataContainer(Container):
             except IndexError:
                 pass
         if len(attributes_names) != len(titles) or len(attributes_names) != len(units) or len(attributes_names) != len(values):
-            raise ImportError("Mismatch in number of columns for DataContainer: " +
-                              str(len(attributes_names)) + " attributes, " +
-                              str(len(titles)) + " titles, " +
-                              str(len(units)) + " units, " +
-                              str(len(values)) + " values columns")
+            raise ImportError(
+                "Mismatch in number of columns for DataContainer: " +
+                str(len(attributes_names)) + " attributes, " +
+                str(len(titles)) + " titles, " +
+                str(len(units)) + " units, " +
+                str(len(values)) + " values columns"
+            )
         for attribute_name, title, unit, value_column in zip(attributes_names, titles, units, values):
             setattr(self, attribute_name, DataField(title, unit, value_column))
 
@@ -181,12 +185,14 @@ class DataContainer(Container):
                 attribute_list = [(name, field) for name, field in vars(self).items() if field.title == title]
                 attribute_name = attribute_list[0][0]
                 attribute = attribute_list[0][1]
-                attribute.sample_rate = dict(default=default_sample_rate,
-                                             current=decoder.decode(sample_rate_str))
+                attribute.sample_rate = dict(
+                    default=default_sample_rate,
+                    current=decoder.decode(sample_rate_str)
+                )
                 setattr(self, attribute_name, attribute)
 
     def get_time_scales(self) -> dict:
-        # TODO: Remove
+        # TODO: Remove method
         time_scales = {}
         sample_rates = numpy.unique([field.sample_rate['current'] for _, field in vars(self).items()])
         max_time = self.time.values[-1]
@@ -211,18 +217,6 @@ class DataContainer(Container):
         for attribute_name, attribute_value in vars(self).items():
             output_str += f"\n\t{attribute_value}"
         return output_str
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def main(data_file: str):
@@ -259,58 +253,74 @@ def main(data_file: str):
 
 
 def plot_3d_trajectory(data: DataContainer, figure):
-    figure.add_trace(plotly.graph_objects.Scatter3d(x=data.car_coord_x.values,
-                                                    y=data.car_coord_y.values,
-                                                    z=data.car_coord_z.values,)
-                     )
-    figure.update_layout(scene=dict(aspectmode='raw_data',
-                                    aspectratio=dict(x=1, y=1, z=1)
-                                    ),
-                         )
+    figure.add_trace(
+        plotly.graph_objects.Scatter3d(
+            x=data.car_coord_x.values,
+            y=data.car_coord_y.values,
+            z=data.car_coord_z.values,
+        )
+    )
+    figure.update_layout(
+        scene=dict(
+            aspectmode='raw_data',
+            aspectratio=dict(x=1, y=1, z=1)
+        ),
+    )
 
 
 def plot_trajectory(data: DataContainer, figure):
-    figure.add_trace(plotly.graph_objects.Scatter(x=data.car_coord_x.values,
-                                                  y=data.car_coord_y.values,
-                                                  )
-                     )
+    figure.add_trace(
+        plotly.graph_objects.Scatter(
+            x=data.car_coord_x.values,
+            y=data.car_coord_y.values,
+        )
+    )
     figure.update_yaxes(scaleanchor="x", scaleratio=1)
 
 
 def plot_sector_times(sector_times_array: numpy.ndarray, figure: plotly.graph_objects.Figure):
-    figure.add_trace(plotly.graph_objects.Scatter(x=sector_times_array[1, [i for i in range(sector_times_array.shape[1]) if i % 3 == 0]],
-                                                  y=sector_times_array[3, [i for i in range(sector_times_array.shape[1]) if i % 3 == 0]],
-                                                  name='Sector times 1, local indexing',
-                                                  showlegend=True,
-                                                  line=dict(shape='hv')
-                                                  ),
-                     )
-    figure.add_trace(plotly.graph_objects.Scatter(x=sector_times_array[1, [i for i in range(sector_times_array.shape[1]) if i % 3 == 1]],
-                                                  y=sector_times_array[3, [i for i in range(sector_times_array.shape[1]) if i % 3 == 1]],
-                                                  name='Sector times 2, local indexing',
-                                                  showlegend=True,
-                                                  line=dict(shape='hv')
-                                                  ),
-                     )
-    figure.add_trace(plotly.graph_objects.Scatter(x=sector_times_array[1, [i for i in range(sector_times_array.shape[1]) if i % 3 == 2]],
-                                                  y=sector_times_array[3, [i for i in range(sector_times_array.shape[1]) if i % 3 == 2]],
-                                                  name='Sector times 3, local indexing',
-                                                  showlegend=True,
-                                                  line=dict(shape='hv')
-                                                  ),
-                     )
+    figure.add_trace(
+        plotly.graph_objects.Scatter(
+            x=sector_times_array[1, [i for i in range(sector_times_array.shape[1]) if i % 3 == 0]],
+            y=sector_times_array[3, [i for i in range(sector_times_array.shape[1]) if i % 3 == 0]],
+            name='Sector times 1, local indexing',
+            showlegend=True,
+            line=dict(shape='hv')
+        ),
+    )
+    figure.add_trace(
+        plotly.graph_objects.Scatter(
+            x=sector_times_array[1, [i for i in range(sector_times_array.shape[1]) if i % 3 == 1]],
+            y=sector_times_array[3, [i for i in range(sector_times_array.shape[1]) if i % 3 == 1]],
+            name='Sector times 2, local indexing',
+            showlegend=True,
+            line=dict(shape='hv')
+        ),
+    )
+    figure.add_trace(
+        plotly.graph_objects.Scatter(
+            x=sector_times_array[1, [i for i in range(sector_times_array.shape[1]) if i % 3 == 2]],
+            y=sector_times_array[3, [i for i in range(sector_times_array.shape[1]) if i % 3 == 2]],
+            name='Sector times 3, local indexing',
+            showlegend=True,
+            line=dict(shape='hv')
+        ),
+    )
 
 
 def plot_car_pos_norm_vs_lap_distance(data: DataContainer, time_scales):
     figure = plotly.subplots.make_subplots(rows=3, cols=1)
 
-    ld_default_time_indices = data.lap_distance.convert_indices(data.lap_distance.indices,
-                                                                data.lap_distance.sample_rate['current'],
-                                                                data.lap_distance.sample_rate['default'])
-    cpn_default_time_indices = data.car_pos_norm.convert_indices(data.car_pos_norm.indices,
-                                                                 data.car_pos_norm.sample_rate['current'],
-                                                                 data.car_pos_norm.sample_rate['default'])
-
+    ld_default_time_indices = data.lap_distance.convert_indices(
+        data.lap_distance.indices,
+        data.lap_distance.sample_rate['current'],
+        data.lap_distance.sample_rate['default']
+    )
+    cpn_default_time_indices = data.car_pos_norm.convert_indices(
+        data.car_pos_norm.indices,
+        data.car_pos_norm.sample_rate['current'],
+        data.car_pos_norm.sample_rate['default']
+    )
     default_time_indices = numpy.union1d(ld_default_time_indices, cpn_default_time_indices)
     time_indices = default_time_indices[default_time_indices < len(time_scales[data.lap_distance.sample_rate['default']])]
     time_values = time_scales[data.lap_distance.sample_rate['default']][time_indices]
@@ -318,47 +328,52 @@ def plot_car_pos_norm_vs_lap_distance(data: DataContainer, time_scales):
     cpn_values = data.car_pos_norm[(time_indices, data.car_pos_norm.sample_rate['default'])]
     lap_number_values = data.lap_number[(time_indices, data.lap_number.sample_rate['default'])]
 
-    figure.add_trace(plotly.graph_objects.Scatter(x=time_values,
-                                                  y=ld_values,
-                                                  name='Lap distance vs time',
-                                                  showlegend=True,
-                                                  line=dict(shape='hv')
-                                                  ),
-                     row=1,
-                     col=1,
-                     )
+    figure.add_trace(
+        plotly.graph_objects.Scatter(
+            x=time_values,
+            y=ld_values,
+            name='Lap distance vs time',
+            showlegend=True,
+            line=dict(shape='hv')
+        ),
+        row=1,
+        col=1,
+    )
 
-    figure.add_trace(plotly.graph_objects.Scatter(
-                            x=time_values,
-                            y=cpn_values,
-                            name='Car Pos Norm vs time',
-                            showlegend=True,
-                            line=dict(shape='hv')
-                        ),
-                        row=2,
-                        col=1,
-                    )
-    figure.add_trace(plotly.graph_objects.Scatter(
-                            x=time_values,
-                            y=lap_number_values,
-                            name='Lap number vs time',
-                            showlegend=True,
-                            line=dict(shape='hv')
-                        ),
-                        row=2,
-                        col=1,
-                    )
+    figure.add_trace(
+        plotly.graph_objects.Scatter(
+            x=time_values,
+            y=cpn_values,
+            name='Car Pos Norm vs time',
+            showlegend=True,
+            line=dict(shape='hv')
+        ),
+        row=2,
+        col=1,
+    )
+    figure.add_trace(
+        plotly.graph_objects.Scatter(
+            x=time_values,
+            y=lap_number_values,
+            name='Lap number vs time',
+            showlegend=True,
+            line=dict(shape='hv')
+        ),
+        row=2,
+        col=1,
+    )
 
-    figure.add_trace(plotly.graph_objects.Scatter(
-                            x=numpy.arange(len(time_values)),
-                            y=time_values,
-                            name='Time indices',
-                            showlegend=True,
-                            line=dict(shape='hv')
-                        ),
-                        row=3,
-                        col=1,
-                    )
+    figure.add_trace(
+        plotly.graph_objects.Scatter(
+            x=numpy.arange(len(time_values)),
+            y=time_values,
+            name='Time indices',
+            showlegend=True,
+            line=dict(shape='hv')
+        ),
+        row=3,
+        col=1,
+    )
 
     figure.show()
 
@@ -369,24 +384,32 @@ def general_xy_plot(figure: plotly.graph_objects.Figure,
                     y_channel_name: str):
     x_axis_data = getattr(data, x_channel_name)
     y_axis_data = getattr(data, y_channel_name)
-    x_axis_time_indices = x_axis_data.convert_indices(x_axis_data.indices,
-                                                      x_axis_data.sample_rate['current'],
-                                                      x_axis_data.sample_rate['default'])
-    y_axis_time_indices = y_axis_data.convert_indices(y_axis_data.indices,
-                                                      y_axis_data.sample_rate['current'],
-                                                      y_axis_data.sample_rate['default'])
+    x_axis_time_indices = x_axis_data.convert_indices(
+        x_axis_data.indices,
+        x_axis_data.sample_rate['current'],
+        x_axis_data.sample_rate['default']
+    )
+    y_axis_time_indices = y_axis_data.convert_indices(
+        y_axis_data.indices,
+        y_axis_data.sample_rate['current'],
+        y_axis_data.sample_rate['default']
+    )
     indices = numpy.union1d(x_axis_time_indices, y_axis_time_indices)
     x_values = x_axis_data[(indices, x_axis_data.sample_rate['default'])]
     y_values = y_axis_data[(indices, y_axis_data.sample_rate['default'])]
-    figure.add_trace(plotly.graph_objects.Scatter(x=x_values,
-                                                  y=y_values,
-                                                  name=f'{y_axis_data.title} vs {x_axis_data.title}',
-                                                  showlegend=True,
-                                                  line=dict(shape='hv')
-                                                  ),
-                     )
-    figure.update_layout(xaxis=dict(title=f'{x_axis_data.title} ({x_axis_data.unit})'),
-                         yaxis=dict(title=f'{y_axis_data.title} ({y_axis_data.unit})',),)
+    figure.add_trace(
+        plotly.graph_objects.Scatter(
+            x=x_values,
+            y=y_values,
+            name=f'{y_axis_data.title} vs {x_axis_data.title}',
+            showlegend=True,
+            line=dict(shape='hv')
+        ),
+    )
+    figure.update_layout(
+        xaxis=dict(title=f'{x_axis_data.title} ({x_axis_data.unit})'),
+        yaxis=dict(title=f'{y_axis_data.title} ({y_axis_data.unit})',),
+    )
 
 
 def general_time_plot(figure: plotly.graph_objects.Figure,
@@ -396,15 +419,19 @@ def general_time_plot(figure: plotly.graph_objects.Figure,
     y_axis_data = getattr(data, y_channel_name)
     x_values = time_scales[y_axis_data.sample_rate['current']][y_axis_data.indices]
     y_values = y_axis_data.values
-    figure.add_trace(plotly.graph_objects.Scatter(x=x_values,
-                                                  y=y_values,
-                                                  name=f'{y_axis_data.title} vs time',
-                                                  showlegend=True,
-                                                  line=dict(shape='hv')
-                                                  ),
-                     )
-    figure.update_layout(xaxis=dict(title='Time (s)',),
-                         yaxis=dict(title=f'{y_axis_data.title} ({y_axis_data.unit})',),)
+    figure.add_trace(
+        plotly.graph_objects.Scatter(
+            x=x_values,
+            y=y_values,
+            name=f'{y_axis_data.title} vs time',
+            showlegend=True,
+            line=dict(shape='hv')
+        ),
+    )
+    figure.update_layout(
+        xaxis=dict(title='Time (s)',),
+        yaxis=dict(title=f'{y_axis_data.title} ({y_axis_data.unit})',),
+    )
 
 
 def debug():
