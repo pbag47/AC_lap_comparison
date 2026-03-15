@@ -74,7 +74,7 @@ def synchronize(local_files_path: str):
     index_file_path = os.path.join(local_files_path, "index.txt")
     update_index_file(index_file_path)
     new_index_file = import_files_index(index_file_path)
-    local_files = get_list_of_local_files(files_directory)
+    local_files = get_list_of_local_files(local_files_path)
     files_to_add, files_to_delete = detect_changes(local_files, new_index_file)
     patch_changes(local_files_path, files_to_add, files_to_delete)
 

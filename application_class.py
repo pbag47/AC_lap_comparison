@@ -8,6 +8,7 @@ import dash_bootstrap_components as dbc
 from dash_bootstrap_templates import load_figure_template
 
 from FreeDisplayPage_class import FreeDisplayPage
+from GoogleDrive_connector import synchronize
 from Lap_class import Lap
 from LapAnalysisPage_class import LapAnalysisPage
 from LapSelectorPage_class import LapSelectorPage
@@ -18,7 +19,8 @@ load_figure_template('SUPERHERO')
 
 
 class MainApplication:
-    def __init__(self):
+    def __init__(self, data_files_path: str):
+        self.data_files_path: str = data_files_path
         self.laps: dict[str: list[Lap]] = dict() # {driver: list[Laps]}
         self.info: dict[str: dict] = dict() # {driver: {info_name: info_value}}
         self.data: dict[str: dict] = dict() # {driver: {data_name: data_values}}
@@ -32,6 +34,7 @@ class MainApplication:
         self.personal_best_s1: dict[str: Lap] = dict()
         self.personal_best_s2: dict[str: Lap] = dict()
         self.personal_best_s3: dict[str: Lap] = dict()
+        synchronize(self.data_files_path)
         self.import_laps()
         self.import_fields()
         self.find_invalid_laps()
@@ -67,10 +70,9 @@ class MainApplication:
         self.set_callbacks()
 
     def import_laps(self):
-        files_location = "processed_data"
-        json_files = [file_name for file_name in os.listdir(files_location) if file_name.endswith('.json')]
+        json_files = [file_name for file_name in os.listdir(self.data_files_path) if file_name.endswith('.json')]
         for json_file in json_files:
-            laps = json.load(open(os.path.join(files_location, json_file)), object_hook=Lap.__from_json__)
+            laps = json.load(open(os.path.join(self.data_files_path, json_file)), object_hook=Lap.__from_json__)
             driver = laps[0].driver
             self.laps[driver] = laps
             self.selected_laps[driver] = []
@@ -94,7 +96,7 @@ class MainApplication:
                 row_skip_selector = lambda x: not(lap.start_index <= x < next_lap[0].start_index)
             else:
                 row_skip_selector = lambda x: not(x >= lap.start_index)
-            with open(os.path.join('processed_data', driver + ' - Data.csv')) as file:
+            with open(os.path.join(self.data_files_path, driver + ' - Data.csv')) as file:
                 lap_data = pandas.read_csv(
                     file,
                     skiprows=row_skip_selector,
@@ -176,5 +178,5 @@ def find_best_times(laps: list[Lap]):
 
 
 if __name__ == '__main__':
-    main_app = MainApplication()
+    main_app = MainApplication(data_files_path='processed_data')
     main_app.app.run(debug=True)
