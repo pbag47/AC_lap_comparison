@@ -19,8 +19,9 @@ load_figure_template('SUPERHERO')
 
 
 class MainApplication:
-    def __init__(self, data_files_path: str):
+    def __init__(self, data_files_path: str, app):
         self.data_files_path: str = data_files_path
+        self.app = app
         self.laps: dict[str: list[Lap]] = dict() # {driver: list[Laps]}
         self.info: dict[str: dict] = dict() # {driver: {info_name: info_value}}
         self.data: dict[str: dict] = dict() # {driver: {data_name: data_values}}
@@ -40,12 +41,6 @@ class MainApplication:
         self.find_invalid_laps()
         self.get_best_times()
         self.get_personal_best_times()
-        dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates@V1.0.2/dbc.min.css"
-        self.app = dash.Dash(
-            __name__,
-            external_stylesheets=[dbc.themes.SUPERHERO, dbc_css],
-            suppress_callback_exceptions=True,
-        )
         self.lap_analysis_page = LapAnalysisPage(self)
         self.rankings_page = RankingsPage(self)
         self.lap_selection_page = LapSelectorPage(self)
@@ -177,6 +172,12 @@ def find_best_times(laps: list[Lap]):
     return best_lap, best_s1, best_s2, best_s3
 
 
-if __name__ == '__main__':
-    main_app = MainApplication(data_files_path='processed_data')
-    main_app.app.run(debug=True)
+dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates@V1.0.2/dbc.min.css"
+app = dash.Dash(
+    __name__,
+    external_stylesheets=[dbc.themes.SUPERHERO, dbc_css],
+    suppress_callback_exceptions=True,
+)
+object_instance = MainApplication(data_files_path='processed_data', app=app)
+server = app.server
+app.run(debug=True)
