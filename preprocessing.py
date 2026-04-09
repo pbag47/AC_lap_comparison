@@ -75,10 +75,11 @@ def get_laps(info: InfoContainer, data: DataContainer) -> list[Lap]:
 
 
 if __name__ == '__main__':
-    source_file = 'raw_data/corvette_c7_laguna_seca_example.csv'
+    # source_file = 'raw_data/corvette_c7_laguna_seca_example.csv'
     # source_file = 'raw_data/04072025-204315-Chuck-ks_audi_a1s1-ks_laguna_seca.csv'
     # source_file = 'raw_data/gps_calibration.csv'
     # source_file = 'raw_data/turn_in_out_calibration.csv'
+    source_file = "raw_data/09042026-215627-Lolowww-ks_audi_a1s1-ks_laguna_seca.csv"
 
     h, info_container, data_container, time_scales = import_raw_data(source_file)
     decimate_data(data_container)

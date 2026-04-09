@@ -25,6 +25,7 @@ class LapSelectorPage:
                         [f"L{lap.number} - {lap}"],
                         style={
                             'color': "red" if not lap.is_valid else "green" if lap == self._app.personal_best_lap[driver] else "black",
+                            "font-weight": "bold",
                         }
                     ),
                     "value": lap.number,

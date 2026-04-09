@@ -13,8 +13,8 @@ class FreeDisplayPage:
         self.time_graph_figure = plotly.graph_objects.Figure()
         self.xy_graph_figure = plotly.graph_objects.Figure()
 
-        self.time_graph_figure.update_layout(legend=dict(groupclick="toggleitem"))
-        self.xy_graph_figure.update_layout(legend=dict(groupclick="toggleitem"))
+        self.time_graph_figure.update_layout(legend=dict(groupclick="toggleitem"), template="SUPERHERO")
+        self.xy_graph_figure.update_layout(legend=dict(groupclick="toggleitem"), template="SUPERHERO")
 
         self.time_graph_y_dropdown_value = None
         self.time_graph_y_dropdown = dash.dcc.Dropdown(
@@ -23,6 +23,7 @@ class FreeDisplayPage:
             id='y_time',
             maxHeight=400,
             placeholder="Sélectionner des séries",
+            style={"font-weight": "bold"},
         )
         self.xy_graph_x_dropdown = dash.dcc.Dropdown(
             self._app.fields,
@@ -30,6 +31,7 @@ class FreeDisplayPage:
             id='x_xy',
             maxHeight=400,
             placeholder="Sélectionner l'axe x",
+            style={"font-weight": "bold"},
         )
         self.xy_graph_y_dropdown = dash.dcc.Dropdown(
             self._app.fields,
@@ -37,6 +39,7 @@ class FreeDisplayPage:
             id='y_xy',
             maxHeight=400,
             placeholder="Sélectionner l'axe y",
+            style={"font-weight": "bold"},
         )
 
         self.page = dash.html.Div([

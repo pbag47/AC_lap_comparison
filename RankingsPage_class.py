@@ -37,6 +37,7 @@ class RankingsPage:
             ),
             height=250,
             margin=dict(l=10, r=10, t=30, b=30),
+            template="SUPERHERO",
         )
 
     def plot_lap_times_graph(self):
@@ -81,18 +82,20 @@ class RankingsPage:
                             ],
                             align='right',
                             fill_color=[
-                                ["red" if not lap.is_valid else "purple" if lap == self._app.best_lap else "green" if lap == self._app.personal_best_lap[driver] else "black" for lap in laps],
-                                ["red" if not lap.is_valid else "purple" if lap == self._app.best_lap else "green" if lap == self._app.personal_best_lap[driver] else "black" for lap in laps],
-                                ["red" if not lap.is_valid else "purple" if lap == self._app.best_s1 else "green" if lap == self._app.personal_best_s1[driver] else "black" for lap in laps],
-                                ["red" if not lap.is_valid else "purple" if lap == self._app.best_s2 else "green" if lap == self._app.personal_best_s2[driver] else "black" for lap in laps],
-                                ["red" if not lap.is_valid else "purple" if lap == self._app.best_s3 else "green" if lap == self._app.personal_best_s3[driver] else "black" for lap in laps],
+                                ["red" if not lap.is_valid else "purple" if lap == self._app.best_lap else "green" if lap == self._app.personal_best_lap[driver] else "darkslategray" for lap in laps],
+                                ["red" if not lap.is_valid else "purple" if lap == self._app.best_lap else "green" if lap == self._app.personal_best_lap[driver] else "darkslategray" for lap in laps],
+                                ["red" if not lap.is_valid else "purple" if lap == self._app.best_s1 else "green" if lap == self._app.personal_best_s1[driver] else "darkslategray" for lap in laps],
+                                ["red" if not lap.is_valid else "purple" if lap == self._app.best_s2 else "green" if lap == self._app.personal_best_s2[driver] else "darkslategray" for lap in laps],
+                                ["red" if not lap.is_valid else "purple" if lap == self._app.best_s3 else "green" if lap == self._app.personal_best_s3[driver] else "darkslategray" for lap in laps],
                             ],
+                            font=dict(color="white"),
                         )
                     )
                 ])
             fig.update_layout(
                 title=driver,
-                margin=dict(l=10, r=10, t=30, b=30),
+                margin=dict(l=10, r=10, t=30, b=0),
                 height=350,
+                template="SUPERHERO",
             )
             self.lap_time_tables[driver] = fig

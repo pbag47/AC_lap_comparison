@@ -30,6 +30,7 @@ class LapAnalysisPage:
             id='dropdown-sector_selection',
             maxHeight=400,
             placeholder="Sélectionner un secteur",
+            style={"font-weight": "bold"},
         )
 
         self.setup_layout()
@@ -97,10 +98,12 @@ class LapAnalysisPage:
             title=dict(text="Trajectoire"),
             # width=600,
             height=450,
+            template="SUPERHERO"
         )
         self.gap_table_figure.update_layout(
             height=250,
             margin=dict(l=10, r=10, t=30, b=30),
+            template="SUPERHERO",
         )
         self.gg_figure.update_layout(
             xaxis=dict(
@@ -118,28 +121,33 @@ class LapAnalysisPage:
             title=dict(text="Diagramme G-G"),
             # width=600,
             height=450,
+            template="SUPERHERO",
         )
         self.throttle_figure.update_layout(
             yaxis=dict(range=[0, 100]),
             height=150,
             margin=dict(l=10, r=10, t=30, b=30),
-            title=dict(text="Accélérateur (%)")
+            title=dict(text="Accélérateur (%)"),
+            template="SUPERHERO",
         )
         self.brake_figure.update_layout(
             yaxis=dict(range=[0, 100]),
             height=150,
             margin=dict(l=10, r=10, t=30, b=30),
-            title=dict(text="Frein (%)")
+            title=dict(text="Frein (%)"),
+            template="SUPERHERO",
         )
         self.steering_angle_figure.update_layout(
             height=150,
             margin=dict(l=10, r=10, t=30, b=30),
-            title=dict(text="Angle au volant (°)")
+            title=dict(text="Angle au volant (°)"),
+            template="SUPERHERO",
         )
         self.speed_figure.update_layout(
             height=150,
             margin=dict(l=10, r=10, t=30, b=30),
-            title=dict(text="Vitesse (km/h)")
+            title=dict(text="Vitesse (km/h)"),
+            template="SUPERHERO",
         )
 
     def setup_callbacks(self):
@@ -200,7 +208,7 @@ class LapAnalysisPage:
         )
 
     def get_section_data(self, driver, lap):
-        lap_data = self._app.data[driver][lap.number][10:-10]
+        lap_data = self._app.data[driver][lap.number][90:-60]
         if self.selected_section is None:
             return lap_data
         else:
@@ -253,6 +261,7 @@ class LapAnalysisPage:
                 layout=dict(
                     height=200,
                     margin=dict(l=10, r=10, t=30, b=30),
+                    template="SUPERHERO",
                 )
             )
             return
@@ -280,17 +289,19 @@ class LapAnalysisPage:
                         align='right',
                         fill_color=[
                             ["black" for _ in range(len(transposed_gaps))],
-                            ["green" if gap < 0 else "red" if gap > 0 else "black" for gap in transposed_gaps[1]],
-                            ["green" if gap < 0 else "red" if gap > 0 else "black" for gap in transposed_gaps[2]],
-                            ["green" if gap < 0 else "red" if gap > 0 else "black" for gap in transposed_gaps[3]],
+                            ["green" if gap < 0 else "red" if gap > 0 else "darkslategray" for gap in transposed_gaps[1]],
+                            ["green" if gap < 0 else "red" if gap > 0 else "darkslategray" for gap in transposed_gaps[2]],
+                            ["green" if gap < 0 else "red" if gap > 0 else "darkslategray" for gap in transposed_gaps[3]],
                         ],
+                        font=dict(color="white"),
                     ),
                 )
             ],
             layout=dict(
                 height=200,
                 margin=dict(l=10, r=10, t=50, b=10),
-                title=dict(text="Ecarts (s)")
+                title=dict(text="Ecarts (s)"),
+                template="SUPERHERO",
             )
         )
 
