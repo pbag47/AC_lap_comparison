@@ -38,6 +38,12 @@ def decimate_data(data: pandas.DataFrame) -> pandas.DataFrame:
     return filtered_data
 
 
+def fix_coordinates(data: pandas.DataFrame) -> pandas.DataFrame:
+    data["car_coord_x"] = - data["car_coord_x"]
+    data["car_coord_y"] = - data["car_coord_y"]
+    return data
+
+
 def main():
     raw_data_file = os.path.join(
         "raw_data",
@@ -50,6 +56,7 @@ def main():
     )
     df = cleanup_headers(df)
     df = decimate_data(df)
+    df = fix_coordinates(df)
     print(df)
     df.to_csv(
         os.path.join(
