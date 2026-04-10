@@ -1,5 +1,4 @@
 
-import json
 import os
 import pandas
 import scipy
@@ -10,19 +9,6 @@ def cleanup_headers(data: pandas.DataFrame) -> pandas.DataFrame:
     data = data.drop(labels=missing_labels, level=0, axis="columns")
     data = data.rename(columns=lambda x: " " if "Unnamed" in x else x, level=1)
     return data
-
-
-def get_sample_rates(config_file_name: str = 'config/sample_rates.txt') -> dict:
-    decoder = json.decoder.JSONDecoder()
-    with open(config_file_name, 'r') as file:
-        _ = file.readline()
-        sample_rates = {}
-        for line in file.readlines():
-            title, sample_rate_str = line.split('|')
-            title = title.rstrip()
-            sample_rate_str = sample_rate_str.rstrip()
-            sample_rates[title] = decoder.decode(sample_rate_str)
-    return sample_rates
 
 
 def decimate_data(data: pandas.DataFrame) -> pandas.DataFrame:
@@ -39,16 +25,24 @@ def decimate_data(data: pandas.DataFrame) -> pandas.DataFrame:
 
 
 def fix_coordinates(data: pandas.DataFrame) -> pandas.DataFrame:
-    data["car_coord_x"] = - data["car_coord_x"]
-    data["car_coord_y"] = - data["car_coord_y"]
+    data["Car Coord X"] = - data["Car Coord X"]
+    data["Car Coord Y"] = - data["Car Coord Y"]
     return data
 
 
-def main():
-    raw_data_file = os.path.join(
-        "raw_data",
-        "corvette_c7_laguna_seca_example.csv"
+def save_as_compressed_csv(data: pandas.DataFrame, driver_name: str, output_folder: str = "compressed_data") -> None:
+    new_file_path = os.path.join(
+        output_folder,
+        driver_name + " - Data.csv.gz",
     )
+    data.to_csv(
+        new_file_path,
+        compression="gzip",
+    )
+    print(f"{new_file_path}: file saved")
+
+
+def preprocessing_data(raw_data_file: str, driver_name: str, output_folder: str = "compressed_data") -> pandas.DataFrame:
     df = pandas.read_csv(
         raw_data_file,
         skiprows=19,
@@ -57,14 +51,17 @@ def main():
     df = cleanup_headers(df)
     df = decimate_data(df)
     df = fix_coordinates(df)
-    print(df)
-    df.to_csv(
-        os.path.join(
-            "compressed_data",
-            "compressed_test.csv.gz",
-        ),
-        compression="gzip",
+    save_as_compressed_csv(df, driver_name, output_folder)
+    return df
+
+
+def preprocessing_test():
+    raw_data_file = os.path.join(
+        "raw_data",
+        "corvette_c7_laguna_seca_example.csv"
     )
+    df = preprocessing_data(raw_data_file, "test")
+    print(df)
 
 
 def read_test():
@@ -75,9 +72,9 @@ def read_test():
         ),
         index_col=0,
     )
-    print(df)
+    print(df.keys().tolist())
 
 
 if __name__ == "__main__":
     read_test()
-    # main()
+    # preprocessing_test()

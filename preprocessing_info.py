@@ -37,16 +37,30 @@ def get_laps(json_export_file: str) -> dict:
     return laps
 
 
-def save_as_json(info_dict: dict, folder_path: str = "compressed_data") -> None:
+def save_as_json(info_dict: dict, driver_name: str, output_folder: str = "compressed_data") -> None:
     new_json_file_path = os.path.join(
-        folder_path,
-        info_dict["Driver"] + " - Laps.json"
+        output_folder,
+        driver_name + " - Laps.json"
     )
     with open(new_json_file_path, 'w') as json_file:
         json.dump(info_dict, json_file, indent=2)
+    print(f"{new_json_file_path}: file saved")
 
 
-def main() -> None:
+def preprocessing_info(raw_data_file, json_export_file, output_folder="compressed_data") -> dict:
+    info_dict = get_info(raw_data_file)
+    laps = get_laps(json_export_file)
+    info_dict["Laps"] = laps
+    driver_name = info_dict["Driver"]
+    save_as_json(
+        info_dict,
+        driver_name=driver_name,
+        output_folder=output_folder
+    )
+    return info_dict
+
+
+def test() -> None:
     raw_data_file = os.path.join(
         "raw_data",
         "corvette_c7_laguna_seca_example.csv"
@@ -55,12 +69,9 @@ def main() -> None:
         "json_data",
         "1751654595-Chuck-8(106.737).json"
     )
-    info_dict = get_info(raw_data_file)
-    laps = get_laps(json_export_file)
-    info_dict["Laps"] = laps
+    info_dict = preprocessing_info(raw_data_file, json_export_file)
     print(info_dict)
-    save_as_json(info_dict)
 
 
 if __name__ == '__main__':
-    main()
+    test()
