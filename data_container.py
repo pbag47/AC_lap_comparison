@@ -201,6 +201,10 @@ class DataContainer(Container):
                 row = [data_field.values[row_number] for data_field in vars(self).values()]
                 writer.writerow(row)
 
+    def save_as_compressed_file(self, info: InfoContainer):
+        data_file_path = os.path.join("compressed_data", info.driver.value + " - Data.csv")
+        
+
     def __str__(self):
         output_str = 'DataContainer:'
         for attribute_name, attribute_value in vars(self).items():
