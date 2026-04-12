@@ -27,36 +27,24 @@ def get_info(csv_export_file: str) -> dict:
         return header
 
 
-def get_laps(json_export_file: str) -> dict:
+def get_laps(json_export_file: str) -> (dict, dict):
     with open(json_export_file) as json_file:
         data = json.load(json_file)
-    laps = data['lapValid']
+    lap_valid = data['lapValid']
     lap_times = data['laptimes']
-    for key, value in laps.items():
-        laps[key] = (lap_times[int(key)-1], int(value))
-    return laps
-
-
-def save_as_json(info_dict: dict, driver_name: str, output_folder: str = "compressed_data") -> None:
-    new_json_file_path = os.path.join(
-        output_folder,
-        driver_name + " - Laps.json"
-    )
-    with open(new_json_file_path, 'w') as json_file:
-        json.dump(info_dict, json_file, indent=2)
-    print(f"{new_json_file_path}: file saved")
+    laps_times = {}
+    laps_valid = {}
+    for key in lap_valid.keys():
+        laps_times[int(key)] = lap_times[int(key)-1]
+        laps_valid[int(key)] = int(lap_valid[key])
+    return laps_times, laps_valid
 
 
 def preprocessing_info(raw_data_file, json_export_file, output_folder="compressed_data") -> dict:
     info_dict = get_info(raw_data_file)
-    laps = get_laps(json_export_file)
-    info_dict["Laps"] = laps
-    driver_name = info_dict["Driver"]
-    save_as_json(
-        info_dict,
-        driver_name=driver_name,
-        output_folder=output_folder
-    )
+    lap_times, laps_valid = get_laps(json_export_file)
+    info_dict["Lap times"] = lap_times
+    info_dict["Laps valid"] = laps_valid
     return info_dict
 
 
