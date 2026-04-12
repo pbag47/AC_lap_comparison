@@ -94,7 +94,7 @@ def fix_lap_number(data: pandas.DataFrame) -> pandas.DataFrame:
     return data
 
 
-def fix_car_pos_norm(info: dict, data: pandas.DataFrame):
+def fix_car_pos_norm(info: dict, data: pandas.DataFrame) -> pandas.DataFrame:
     max_tolerated_speed = 400   # km/h
     track_length_str, _ = info["Venue Length"].split(" ")
     track_length = json.decoder.JSONDecoder().decode(track_length_str) / 1_000  # km
@@ -136,6 +136,7 @@ def preprocessing_data(raw_data_file: str) -> pandas.DataFrame:
     df = fix_rounding(df)
     df = fix_lap_number(df)
     df = fix_coordinates(df)
+
     return df
 
 

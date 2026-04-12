@@ -12,29 +12,32 @@ def get_sectors() -> dict:
     sections = get_sections_from_ini_file()
     sectors = {}
     for section in sections:
-        match section.title:
-            case title if "Secteur" in title:
-                sectors[title] = [section.start, section.stop]
+        sectors[section.title] = [section.start, section.stop]
     return sectors
 
 
-def get_sector_times(info: dict, data: pandas.DataFrame, sectors: dict):
+def get_sector_times(info: dict, data: pandas.DataFrame, sectors: dict) -> dict:
     sectors_times = {}
-    for lap_number in info["Lap times"].keys():
-        lap_data = data[round(data["Lap Number"]) == lap_number]
-        sectors_times[lap_number] = {}
-        for sector_name, sector_bounds in sectors.items():
+    # section_indices = {}
+    for sector_name, sector_bounds in sectors.items():
+        sectors_times[sector_name] = {}
+        for lap_number in info["Lap times"].keys():
+            lap_data = data[data["Lap Number"] == lap_number]
+            # section_indices[lap_number] = {}
             sector_time = lap_data[(sector_bounds[0] < lap_data["Car Pos Norm"]) & (lap_data["Car Pos Norm"] < sector_bounds[1])]["time"]
+            # sector_indices = lap_data.index[(sector_bounds[0] < lap_data["Car Pos Norm"]) & (lap_data["Car Pos Norm"] < sector_bounds[1])]
+            # print(sector_indices[0], sector_indices[-1])
+            # section_indices[lap_number][]
             sector_end_time = sector_time.iloc[-1]
             sector_start_time = sector_time.iloc[0]
-            sectors_times[lap_number][sector_name] = sector_end_time - sector_start_time
+            sectors_times[sector_name][lap_number] = sector_end_time - sector_start_time
     return sectors_times
 
 
 def save_as_json(info_dict: dict, driver_name: str, output_folder: str = "compressed_data") -> None:
     new_json_file_path = os.path.join(
         output_folder,
-        driver_name + " - Laps.json"
+        driver_name + " - Info.json"
     )
     with open(new_json_file_path, 'w') as json_file:
         json.dump(info_dict, json_file, indent=2)
@@ -74,6 +77,7 @@ def main():
     )
     output_folder = "compressed_data"
     info_dict, data = preprocessing(raw_csv_file, json_file)
+    print(info_dict)
     driver_name = info_dict["Driver"]
     save_as_json(
         info_dict,
