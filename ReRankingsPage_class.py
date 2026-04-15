@@ -42,16 +42,16 @@ class RankingsPage:
         for driver, info in self._app.info.items():
             self.lap_times_figure.add_trace(
                 plotly.graph_objects.Scatter(
-                    x=self._app.lap_tables[driver]["Lap number"],
-                    y=pandas.to_datetime(self._app.lap_tables[driver]["LapTimeFloat"], unit="s"),
+                    x=self._app.lap_tables[self._app.lap_tables["Driver"]==driver]["Lap number"],
+                    y=pandas.to_datetime(self._app.lap_tables[self._app.lap_tables["Driver"]==driver]["LapTimeFloat"], unit="s"),
                     mode='markers+lines',
                     name=driver,
                     marker=dict(
                         symbol=pandas.Series(
                             "arrow-up",
-                            index=self._app.lap_tables[driver].index
+                            index=self._app.lap_tables[self._app.lap_tables["Driver"]==driver].index
                         ).mask(
-                            self._app.lap_tables[driver]["IsValid"] == True,
+                            self._app.lap_tables[self._app.lap_tables["Driver"]==driver]["IsValid"] == True,
                             "circle"
                         ),
                     ),
@@ -59,14 +59,15 @@ class RankingsPage:
             )
 
     def plot_lap_times_tables(self):
-        overall_data = pandas.concat(self._app.lap_tables.values())
-        overall_bests = overall_data[overall_data["IsValid"] == True].min()
+        overall_bests = self._app.lap_tables[self._app.lap_tables["IsValid"] == True].min()
         red_for_invalid = {
             "condition": "params.data.IsValid < 0.5",
             "style": {"backgroundColor": "red", "color": "white"},
         }
         for driver, info in self._app.info.items():
-            personal_bests = self._app.lap_tables[driver][self._app.lap_tables[driver]["IsValid"] == True].min()
+            personal_bests = self._app.lap_tables[
+                (self._app.lap_tables["Driver"]==driver) & (self._app.lap_tables["IsValid"] == True)
+            ].min()
             lap_number_styling = {
                 "field": "Lap number",
                 "cellStyle": {
@@ -150,7 +151,7 @@ class RankingsPage:
 
             grid = dash_ag_grid.AgGrid(
                 id=driver+"lap-times",
-                rowData=self._app.lap_tables[driver].to_dict("records"),
+                rowData=self._app.lap_tables[self._app.lap_tables["Driver"]==driver].to_dict("records"),
                 columnDefs=[
                     lap_number_styling,
                     lap_time_styling,
