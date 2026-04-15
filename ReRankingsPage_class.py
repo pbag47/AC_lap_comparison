@@ -11,6 +11,7 @@ class RankingsPage:
         self.lap_times_figure = plotly.graph_objects.Figure()
         self.lap_time_tables = []
         self.set_layout()
+        self.analysis_button = dash.dcc.Button("Analyse des tours sélectionnés", id="analysis-button")
         self.plot_lap_times_graph()
         self.plot_lap_times_tables()
         self.page = dash.html.Div(
@@ -20,8 +21,35 @@ class RankingsPage:
                     id='graph-lap-times-figure',
                 ),
                 *self.lap_time_tables,
-            ]
+                self.analysis_button
+            ],
+            id="rankings-page",
         )
+        self.setup_callbacks()
+
+    def setup_callbacks(self):
+        self._app.app.callback(
+            [
+                dash.dependencies.Output("rankings-page", "children"),
+                dash.dependencies.Input("analysis-button", "n_clicks"),
+                *[dash.dependencies.Input(driver+"lap-times","selectedRows") for driver in self._app.drivers],
+             ])(self.show_page)
+
+    def show_page(self, _, *args):
+        print(args)
+        match dash.ctx.triggered_id:
+            case i if "lap-times" in str(i):
+                raise dash.exceptions.PreventUpdate
+            case _:
+                return [
+                    dash.html.Div([
+                    dash.dcc.Graph(
+                        figure=self.lap_times_figure,
+                        id='graph-lap-times-figure',
+                    ),
+                    *self.lap_time_tables,
+                    self.analysis_button,
+                ])]
 
     def set_layout(self):
         self.lap_times_figure.update_layout(
@@ -159,6 +187,8 @@ class RankingsPage:
                     sector_2_styling,
                     sector_3_styling,
                 ],
+                columnSize="sizeToFit",
+                dashGridOptions={"rowSelection": {"mode": "multiRow"}}
             )
 
             self.lap_time_tables.append(

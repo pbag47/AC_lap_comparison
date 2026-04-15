@@ -27,21 +27,19 @@ class MainApplication:
         self.import_data()
         self.set_lap_tables()
 
+        self.rankings_page = RankingsPage(self)
+
         self.home_button = dash.dcc.Button("Accueil", id="home-button", n_clicks=0)
         self.rankings_button = dash.dcc.Button('Classement', id="rankings-button", n_clicks=0)
-        self.data_selection_button = dash.dcc.Button('Analyse détaillée', id="data-selection-button", n_clicks=0)
         self.displayed_page = dash.html.Div([], id="displayed-page")
-        self.rankings_page = RankingsPage(self)
         self.app.layout = dash.html.Div(
             [
                 dash.html.H1('Télémétrie'),
                 self.home_button,
                 self.rankings_button,
-                self.data_selection_button,
                 self.displayed_page,
-                # self.rankings_page.page,
             ],
-            className='dbc dbc-ag-grid',
+            # className='dbc dbc-ag-grid',
         )
         self.setup_callbacks()
 
