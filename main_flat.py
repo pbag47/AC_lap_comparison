@@ -72,7 +72,6 @@ class Application:
         else:
             sector_name = selected_rows[0][0]["Secteur"]
         header = dash.html.H1("Télémétrie - " + sector_name)
-        print(sector_name)
         selected_section = [section for section in self.sections if section.title == sector_name]
         if not selected_section:
             print("No section selected")

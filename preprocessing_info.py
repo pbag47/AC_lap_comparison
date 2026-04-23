@@ -37,6 +37,7 @@ def get_laps(json_export_file: str) -> (dict, dict):
     for key in lap_valid.keys():
         laps_times[int(key)] = lap_times[int(key)-1]
         laps_valid[int(key)] = int(lap_valid[key])
+    laps_valid[1] = 0
     return laps_times, laps_valid
 
 
