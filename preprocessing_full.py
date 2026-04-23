@@ -1,6 +1,8 @@
 
 import json
 import os
+
+import numpy
 import pandas
 
 from coordinates_handler import get_sections_from_ini_file
@@ -28,9 +30,13 @@ def get_sector_times(info: dict, data: pandas.DataFrame, sectors: dict) -> dict:
             # sector_indices = lap_data.index[(sector_bounds[0] < lap_data["Car Pos Norm"]) & (lap_data["Car Pos Norm"] < sector_bounds[1])]
             # print(sector_indices[0], sector_indices[-1])
             # section_indices[lap_number][]
-            sector_end_time = sector_time.iloc[-1]
-            sector_start_time = sector_time.iloc[0]
-            sectors_times[sector_name][lap_number] = sector_end_time - sector_start_time
+            # print(lap_number, sector_name, sector_time)
+            try:
+                sector_end_time = sector_time.iloc[-1]
+                sector_start_time = sector_time.iloc[0]
+                sectors_times[sector_name][lap_number] = sector_end_time - sector_start_time
+            except IndexError:
+                sectors_times[sector_name][lap_number] = numpy.nan
     return sectors_times
 
 

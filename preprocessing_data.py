@@ -4,6 +4,8 @@ import numpy
 import os
 import pandas
 
+import matplotlib.pyplot
+
 
 def nan_helper(y):
     """Helper to handle indices and logical indices of NaNs.
@@ -46,7 +48,13 @@ def resample_data(data: pandas.DataFrame, sample_rates: dict) -> pandas.DataFram
     new_data = pandas.DataFrame()
     for header in data.keys():
         name, unit = header
-        data_series = data[name][unit].to_numpy().copy()
+        try:
+            data_series = data[name][unit].to_numpy().copy()
+        except KeyError:
+            data_series = data[name].to_numpy().copy()
+            dataframe_to_append = pandas.DataFrame(data_series, columns=[name])
+            new_data = pandas.concat([new_data, dataframe_to_append], axis="columns")
+            continue
         if sample_rates[name] == 20:
             data_series = data_series[~numpy.isnan(data_series)]
             x = numpy.asarray(list(range(len(data_series))))
@@ -132,11 +140,16 @@ def preprocessing_data(raw_data_file: str) -> pandas.DataFrame:
         header=[0, 1],
     )
     df = cleanup_headers(df)
+    # matplotlib.pyplot.plot(df["Car Pos Norm"], marker=11)
+    # matplotlib.pyplot.show()
+    print(df[["time", "Car Pos Norm"]])
     df = resample_data(df, sample_rates)
+    print(df[["time", "Car Pos Norm"]])
+    # matplotlib.pyplot.plot(df["Car Pos Norm"], marker=11)
+    # matplotlib.pyplot.show()
     df = fix_rounding(df)
     df = fix_lap_number(df)
     df = fix_coordinates(df)
-
     return df
 
 
