@@ -93,7 +93,8 @@ def get_lap_time_tables(drivers: list[str], lap_times: pandas.DataFrame) -> list
                 sector_3_styling,
             ],
             columnSize="sizeToFit",
-            dashGridOptions={"rowSelection": {"mode": "multiRow"}}
+            dashGridOptions={"rowSelection": {"mode": "multiRow"}},
+            style = {"height": 520},
         )
 
         output.append(dash.html.H2(driver))
@@ -102,7 +103,7 @@ def get_lap_time_tables(drivers: list[str], lap_times: pandas.DataFrame) -> list
 
 
 def get_lap_times_comparison(info: dict, selected_laps: pandas.DataFrame) -> list:
-    header = dash.html.H1("Comparaison des tours sélectionnés")
+    header = dash.html.H1("Analyse des tours sélectionnés")
     if selected_laps.empty:
         return [header]
     try:
@@ -132,7 +133,8 @@ def get_lap_times_comparison(info: dict, selected_laps: pandas.DataFrame) -> lis
         columnSize="sizeToFit",
         dashGridOptions={
             "rowSelection": {'mode': 'singleRow'},
-        }
+        },
+        style={"height": 640},
     )
     return [[header, grid]]
 
