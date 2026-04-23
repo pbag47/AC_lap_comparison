@@ -102,7 +102,7 @@ def get_lap_time_tables(drivers: list[str], lap_times: pandas.DataFrame) -> list
 
 
 def get_lap_times_comparison(info: dict, selected_laps: pandas.DataFrame) -> list:
-    print(info)
+    # print(info)
     print(selected_laps)
     header = dash.html.H1("Comparaison des tours sélectionnés")
     if selected_laps.empty:
@@ -111,21 +111,35 @@ def get_lap_times_comparison(info: dict, selected_laps: pandas.DataFrame) -> lis
         any_driver = selected_laps["Driver"].unique()[0]
     except IndexError:
         return [header]
+
+    sector_names = info[any_driver]["Sector times"].keys()
+    # sector_names.insert(0, "Lap time")
+
+    drivers = selected_laps["Driver"].tolist()
+    lap_numbers = selected_laps["Lap number"].tolist()
+    column_names = dict()
+    for index in range(len(selected_laps)):
+        driver = drivers[index]
+        lap_number = lap_numbers[index]
+        column_names[index] = driver + ", Tour n°" + str(lap_number)
+    # print("Column names: \n", column_names)
+    print(sector_names)
+    selected_laps = selected_laps[sector_names].copy()
+    print("filtered:\n ", selected_laps)
+    selected_laps = selected_laps.transpose()
+    selected_laps.rename(columns=column_names, inplace=True)
+    selected_laps["Secteur"] = selected_laps.index
+    print("final: \n", selected_laps)
     grid = dash_ag_grid.AgGrid(
         id="lap-times-comparison",
         rowData=selected_laps.to_dict("records"),
         columnDefs=[
-            {"field": "Driver"},
-            {"field": "Lap number"},
-            *[{
-                "field": sector_name,
-                # "cellStyle": {
-                #     "function": "heatMap(params)",
-                    # "cellRendererParams": {"min": "min(params.column)", "max": "max(params.column)"},
-                # },
-            } for sector_name in info[any_driver]["Sector times"].keys()]
+            {"field": "Secteur"},
+            *[{"field": column_name} for column_name in column_names.values()],
         ],
         columnSize="sizeToFit",
+        getRowId="params.data.index",
+        dashGridOptions={"rowSelection": {"mode": "singleRow"}}
     )
     return [[header, grid]]
 
