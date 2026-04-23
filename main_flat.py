@@ -14,24 +14,24 @@ import lap_analysis_layouts
 class Application:
     def __init__(self, drivers, info, data, lap_times, app):
         self.drivers = drivers
-        # self.sectors = get_sectors()
         self.sections = get_sections_from_ini_file()
         self.info = info
         self.data = data
         self.lap_times = lap_times
         self.app = app
 
-        self.home_button = dash.html.Button("Accueil", id="home-button")
-        self.rankings_button = dash.html.Button("Classement", id="rankings-button")
-        self.navigation_bar = dash.html.Div([self.home_button, self.rankings_button], id="navigation-bar")
-        self.rankings_page = dash.html.Div([], id="rankings-page")
+        figure = plot_lap_times_graph(self.drivers, self.lap_times)
+
+        self.rankings_page = dash.html.Div([
+            dash.dcc.Graph(figure=figure),
+            *get_lap_time_tables(self.drivers, self.lap_times)
+        ], id="rankings-page")
         self.lap_times_comparison_page = dash.html.Div([], id="lap-times-comparison-page")
         self.lap_analysis_page = dash.html.Div([], id="lap-analysis-page")
 
         self.app.layout = dash.html.Div(
             [
-                dash.html.H1('Télémétrie'),
-                self.navigation_bar,
+                dash.html.H1('Challenge CREA - Résultats'),
                 self.rankings_page,
                 self.lap_times_comparison_page,
                 self.lap_analysis_page,
@@ -40,12 +40,6 @@ class Application:
         self.setup_callbacks()
 
     def setup_callbacks(self):
-        self.app.callback(
-            [
-                dash.dependencies.Output(self.rankings_page, "children"),
-                dash.dependencies.Input(self.home_button, "n_clicks"),
-                dash.dependencies.Input(self.rankings_button, "n_clicks"),
-             ])(self.rankings_page_callback)
         self.app.callback(
             [
                 dash.dependencies.Output(self.lap_times_comparison_page, "children"),
@@ -57,20 +51,6 @@ class Application:
                 [dash.dependencies.Input("lap-times-comparison", "selectedRows")],
                 *[dash.dependencies.State(driver + "lap-times", "selectedRows") for driver in self.drivers],
             ])(self.lap_analysis_page_callback)
-
-
-    def rankings_page_callback(self, *_) -> list:
-        match dash.ctx.triggered_id:
-            case "home-button":
-                return [dash.html.H1("Home")]
-            case "rankings-button":
-                figure = plot_lap_times_graph(self.drivers, self.lap_times)
-                return [[
-                    dash.dcc.Graph(figure=figure),
-                    *get_lap_time_tables(self.drivers, self.lap_times)
-                ]]
-            case _:
-                return [dash.html.H1("_")]
 
     def lap_times_comparison_page_callback(self, *args) -> list:
         df = pandas.DataFrame()

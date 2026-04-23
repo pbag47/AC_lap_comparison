@@ -14,9 +14,9 @@ track_map_layout = dict(
     yaxis=dict(scaleanchor="x", scaleratio=1, showgrid=False, zeroline=False),
     # margin=dict(l=10, r=10, t=30, b=20),
     title=dict(text="Trajectoire"),
-    legend=dict(xanchor="right", yanchor="top")
+    legend=dict(xanchor="right", yanchor="top"),
     # width=600,
-    # height=450,
+    height=600,
     # template="SUPERHERO",
 )
 
