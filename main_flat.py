@@ -130,7 +130,7 @@ class Application:
         ]]
 
 
-def main(data_files_path: str, synchronize_with_remote: bool):
+def main(data_files_path: str, synchronize_with_remote: bool) -> dash.Dash:
     if synchronize_with_remote:
         synchronize(data_files_path)
 
@@ -146,14 +146,13 @@ def main(data_files_path: str, synchronize_with_remote: bool):
         # external_stylesheets=[dbc.themes.SUPERHERO, dbc_css],
         suppress_callback_exceptions=True,
     )
-    # app = None
-    server = app.server
     Application(drivers, info, data, lap_times, app)
-    app.run(debug=True)
+    return app
 
 
 if __name__ == "__main__":
-    main(
+    application = main(
         data_files_path="compressed_data",
         synchronize_with_remote=False,
     )
+    application.run(debug=True)

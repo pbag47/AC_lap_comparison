@@ -158,4 +158,18 @@ def plot_lap_times_graph(drivers: str, lap_times: pandas.DataFrame) -> plotly.gr
                 ),
             ),
         )
+    figure.update_layout(
+        title="Temps au tour",
+        xaxis=dict(
+            title=dict(text="Tour"),
+        ),
+        yaxis=dict(
+            tickformat="%M:%S.%f",
+            title=dict(text="Temps"),
+        ),
+        legend=dict(xanchor="right", yanchor="top"),
+        # height=250,
+        # margin=dict(l=10, r=10, t=30, b=30),
+        # template="SUPERHERO",
+    )
     return figure
