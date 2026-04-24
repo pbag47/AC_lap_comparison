@@ -1,5 +1,6 @@
 
 import dash
+import dash_bootstrap_components
 import pandas
 import plotly
 
@@ -143,7 +144,7 @@ def main(data_files_path: str, synchronize_with_remote: bool) -> dash.Dash:
     # print(drivers, info, data, lap_times)
     app = dash.Dash(
         __name__,
-        # external_stylesheets=[dbc.themes.SUPERHERO, dbc_css],
+        # external_stylesheets=[dash_bootstrap_components.themes.SUPERHERO],
         suppress_callback_exceptions=True,
     )
     Application(drivers, info, data, lap_times, app)
