@@ -7,6 +7,7 @@ default_figure_margins = dict(
     t=40,
     b=40,
 )
+figure_template = "plotly_dark"
 
 
 track_map_layout = dict(
@@ -17,6 +18,7 @@ track_map_layout = dict(
     legend=dict(xanchor="right", yanchor="top"),
     # width=600,
     height=600,
+    template=figure_template,
     # template="SUPERHERO",
 )
 
@@ -37,6 +39,7 @@ gg_diagram_layout = dict(
     legend=dict(xanchor="right", yanchor="top"),
     # width=600,
     # height=450,
+    template=figure_template,
 )
 
 throttle_layout = dict(
@@ -47,6 +50,7 @@ throttle_layout = dict(
     title=dict(text="Accélérateur (%)"),
     legend=dict(xanchor="right", yanchor="top"),
     # template="SUPERHERO",
+    template=figure_template,
 )
 
 brakes_layout = dict(
@@ -57,6 +61,7 @@ brakes_layout = dict(
     title=dict(text="Frein (%)"),
     legend=dict(xanchor="right", yanchor="top"),
     # template="SUPERHERO",
+    template=figure_template,
 )
 
 steering_layout = dict(
@@ -66,6 +71,7 @@ steering_layout = dict(
     title=dict(text="Angle au volant (°)"),
     legend=dict(xanchor="right", yanchor="top"),
     # template="SUPERHERO",
+    template=figure_template,
 )
 
 speed_layout = dict(
@@ -75,6 +81,7 @@ speed_layout = dict(
     title=dict(text="Vitesse (km/h)"),
     legend=dict(xanchor="right", yanchor="top"),
     # template="SUPERHERO",
+    template=figure_template,
 )
 
 

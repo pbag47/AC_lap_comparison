@@ -1,5 +1,6 @@
 
 import dash
+import dash_ag_grid
 import dash_bootstrap_components
 import pandas
 import plotly
@@ -32,7 +33,7 @@ class Application:
 
         self.app.layout = dash.html.Div(
             [
-                dash.html.H1('Challenge CREA - Résultats'),
+                dash.html.H1('Challenge CREA - Résultats', style={"margin": "30px"}),
                 self.rankings_page,
                 self.lap_times_comparison_page,
                 self.lap_analysis_page,
@@ -72,7 +73,7 @@ class Application:
             sector_name = "Tour complet"
         else:
             sector_name = selected_rows[0][0]["Secteur"]
-        header = dash.html.H1("Télémétrie - " + sector_name)
+        header = dash.html.H2("Télémétrie - " + sector_name, style={"margin-top": "30px", "margin-left": "30px"})
         selected_section = [section for section in self.sections if section.title == sector_name]
         if not selected_section:
             print("No section selected")
@@ -144,7 +145,10 @@ def main(data_files_path: str, synchronize_with_remote: bool) -> dash.Dash:
     # print(drivers, info, data, lap_times)
     app = dash.Dash(
         __name__,
-        # external_stylesheets=[dash_bootstrap_components.themes.SUPERHERO],
+        external_stylesheets=[
+            dash_bootstrap_components.themes.SUPERHERO,
+            dash_ag_grid.themes.ALPINE,
+        ],
         suppress_callback_exceptions=True,
     )
     Application(drivers, info, data, lap_times, app)

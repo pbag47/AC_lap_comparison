@@ -93,17 +93,20 @@ def get_lap_time_tables(drivers: list[str], lap_times: pandas.DataFrame) -> list
                 sector_3_styling,
             ],
             columnSize="sizeToFit",
-            dashGridOptions={"rowSelection": {"mode": "multiRow"}},
+            dashGridOptions={
+                "rowSelection": {"mode": "multiRow"},
+                "theme": {"function": "themeAlpine.withParams({backgroundColor: 'black' , foregroundColor: 'white', accentColor : 'lightblue'})"},
+            },
             style = {"height": 520},
         )
 
-        output.append(dash.html.H2(driver))
+        output.append(dash.html.H3(driver, style={"margin-top": "30px", "margin-left": "15px"}))
         output.append(grid)
     return output
 
 
 def get_lap_times_comparison(info: dict, selected_laps: pandas.DataFrame) -> list:
-    header = dash.html.H1("Analyse des tours sélectionnés")
+    header = dash.html.H2("Analyse des tours sélectionnés", style={"margin-top": "30px", "margin-left": "30px"})
     if selected_laps.empty:
         return [header]
     try:
@@ -133,6 +136,7 @@ def get_lap_times_comparison(info: dict, selected_laps: pandas.DataFrame) -> lis
         columnSize="sizeToFit",
         dashGridOptions={
             "rowSelection": {'mode': 'singleRow'},
+            "theme": {"function": "themeAlpine.withParams({backgroundColor: 'black' , foregroundColor: 'white', accentColor : 'lightblue'})"},
         },
         style={"height": 640},
     )
@@ -173,5 +177,6 @@ def plot_lap_times_graph(drivers: str, lap_times: pandas.DataFrame) -> plotly.gr
         # height=250,
         # margin=dict(l=10, r=10, t=30, b=30),
         # template="SUPERHERO",
+        template="plotly_dark",
     )
     return figure
