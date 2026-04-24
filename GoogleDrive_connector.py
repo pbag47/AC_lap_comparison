@@ -4,7 +4,7 @@ import requests
 
 
 def update_index_file(local_index_file_path: str):
-    index_file_id = "13VDGtt5py6KezLBXaXmXHubQCNMLcnma"
+    index_file_id = "1Cr_4tQTBjm9yiAk_yO8MI92HMdb74oTW"
     retrieve_file_from_google_drive(
         file_path=local_index_file_path,
         file_id=index_file_id
@@ -20,10 +20,13 @@ def retrieve_file_from_google_drive(file_path: str, file_id: str):
             response.raise_for_status()
             with open(file_path, mode="wb") as file:
                 file.write(response.content)
-        case ".csv":
+        case ".gz":
             with open(file_path, 'wb') as file, requests.get(query_url, stream=True) as response:
-                for line in response.iter_lines():
-                    file.write(line + '\n'.encode())
+                for chunk in response.raw.stream(1024, decode_content=False):
+                    if chunk:
+                        file.write(chunk)
+                # for line in response.iter_lines():
+                #     file.write(line + '\n'.encode())
         case ".txt":
             response = requests.get(query_url, timeout=5)
             response.raise_for_status()

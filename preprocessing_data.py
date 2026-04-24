@@ -4,8 +4,6 @@ import numpy
 import os
 import pandas
 
-import matplotlib.pyplot
-
 
 def nan_helper(y):
     """Helper to handle indices and logical indices of NaNs.

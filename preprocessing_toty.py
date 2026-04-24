@@ -1,6 +1,5 @@
 
 import os
-import matplotlib.pyplot
 import numpy
 import pandas
 
@@ -118,8 +117,8 @@ def main():
 def test():
     from data_import import import_data
     data = import_data("compressed_data", ["Chuck"])
-    matplotlib.pyplot.plot(data["Car Pos Norm"], marker=11)
-    matplotlib.pyplot.show()
+    # matplotlib.pyplot.plot(data["Car Pos Norm"], marker=11)
+    # matplotlib.pyplot.show()
     print(data)
 
 
