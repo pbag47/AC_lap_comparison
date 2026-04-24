@@ -1,5 +1,6 @@
 
 import json
+import numpy
 import os
 import pandas
 
@@ -67,6 +68,8 @@ def set_lap_tables(info: dict) -> pandas.DataFrame:
 
 
 def seconds_to_time_str(time_in_seconds: float) -> str:
+    if numpy.isnan(time_in_seconds):
+        return str(time_in_seconds)
     minutes, seconds = divmod(time_in_seconds, 60)
     seconds, milliseconds = divmod(seconds, 1)
     if not minutes:

@@ -41,7 +41,7 @@ def get_laps(json_export_file: str) -> (dict, dict):
     return laps_times, laps_valid
 
 
-def preprocessing_info(raw_data_file, json_export_file, output_folder="compressed_data") -> dict:
+def preprocessing_info(raw_data_file, json_export_file) -> dict:
     info_dict = get_info(raw_data_file)
     lap_times, laps_valid = get_laps(json_export_file)
     info_dict["Lap times"] = lap_times
