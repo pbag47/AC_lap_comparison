@@ -150,6 +150,7 @@ def main(data_files_path: str, synchronize_with_remote: bool) -> dash.Dash:
             dash_ag_grid.themes.ALPINE,
         ],
         suppress_callback_exceptions=True,
+        serve_locally=True,
     )
     Application(drivers, info, data, lap_times, app)
     return app

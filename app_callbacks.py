@@ -174,9 +174,6 @@ def plot_lap_times_graph(drivers: str, lap_times: pandas.DataFrame) -> plotly.gr
             title=dict(text="Temps"),
         ),
         legend=dict(xanchor="right", yanchor="top"),
-        # height=250,
-        # margin=dict(l=10, r=10, t=30, b=30),
-        # template="SUPERHERO",
         template="plotly_dark",
     )
     return figure
