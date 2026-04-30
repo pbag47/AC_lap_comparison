@@ -1,4 +1,4 @@
-from main_flat import main
+from main_local import main
 
 
 application = main(
