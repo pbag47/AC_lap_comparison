@@ -17,7 +17,7 @@ def get_lap_time_tables(drivers: list[str], lap_times: pandas.DataFrame) -> list
     }
     for driver in drivers:
         personal_bests = lap_times[
-            (lap_times["Driver"]==driver) & (lap_times["IsValid"] == True)
+            (lap_times["Driver"] == driver) & (lap_times["IsValid"] == True)
         ].min()
         lap_number_styling = {
             "field": "Lap number",

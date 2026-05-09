@@ -7,8 +7,9 @@ import plotly
 
 from coordinates_handler import Origin, get_sections_from_ini_file
 from GoogleDrive_connector import synchronize
-from data_import import parse_index, import_info, import_data, set_lap_tables
+from data_import import parse_index, import_info, import_data, set_lap_tables, get_rankings
 from app_callbacks import get_lap_time_tables, plot_lap_times_graph, get_lap_times_comparison
+from podium import build_podium
 import lap_analysis
 import lap_analysis_layouts
 
@@ -21,10 +22,12 @@ class Application:
         self.data = data
         self.lap_times = lap_times
         self.app = app
+        self.rankings = get_rankings(self.drivers, self.lap_times)
 
         figure = plot_lap_times_graph(self.drivers, self.lap_times)
 
         self.rankings_page = dash.html.Div([
+            dash.html.H2("Détail des tours", style={"margin": "30px"}),
             dash.dcc.Graph(figure=figure),
             *get_lap_time_tables(self.drivers, self.lap_times)
         ], id="rankings-page")
@@ -34,6 +37,7 @@ class Application:
         self.app.layout = dash.html.Div(
             [
                 dash.html.H1('Challenge CREA - Résultats', style={"margin": "30px"}),
+                build_podium(self.rankings),
                 self.rankings_page,
                 self.lap_times_comparison_page,
                 self.lap_analysis_page,
