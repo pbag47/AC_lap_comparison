@@ -146,7 +146,12 @@ def get_lap_times_comparison(info: dict, selected_laps: pandas.DataFrame) -> lis
 
 def plot_lap_times_graph(drivers: str, lap_times: pandas.DataFrame) -> plotly.graph_objects.Figure:
     figure = plotly.graph_objects.Figure()
+    visible = True
     for driver in drivers:
+        if driver == "Chuck":
+            visible = 'legendonly'
+        else:
+            visible = True
         figure.add_trace(
             plotly.graph_objects.Scatter(
                 x=lap_times[lap_times["Driver"]==driver]["Lap number"],
@@ -162,6 +167,7 @@ def plot_lap_times_graph(drivers: str, lap_times: pandas.DataFrame) -> plotly.gr
                         "circle"
                     ),
                 ),
+                visible=visible,
             ),
         )
     figure.update_layout(

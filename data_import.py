@@ -69,6 +69,8 @@ def set_lap_tables(info: dict) -> pandas.DataFrame:
 def get_rankings(drivers: list[str], lap_times: pandas.DataFrame) -> pandas.DataFrame:
     personal_bests = pandas.DataFrame()
     for driver in drivers:
+        if driver == "Chuck":
+            continue
         filtered_lap_times = lap_times[(lap_times["Driver"] == driver) & (lap_times["IsValid"] == True)]
         df = lap_times[lap_times["LapTimeFloat"] == (filtered_lap_times["LapTimeFloat"].min())]
         personal_bests = pandas.concat([personal_bests, df])
