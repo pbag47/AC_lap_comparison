@@ -75,11 +75,11 @@ def preprocessing(raw_data_file, json_export_file) -> (dict, pandas.DataFrame):
 def main():
     raw_csv_file = os.path.join(
         "raw_data",
-        "09042026-215627-Lolowww-ks_audi_a1s1-ks_laguna_seca.csv"
+        "19052026-183041-momolafriteuz_2-ks_audi_a1s1-ks_laguna_seca.csv"
     )
     json_file = os.path.join(
         "json_data",
-        "1775764587-Lolowww-11(121.026).json"
+        "1779208241-momolafriteuz_2-11(137.616).json"
     )
     output_folder = "compressed_data"
     info_dict, data = preprocessing(raw_csv_file, json_file)
