@@ -53,9 +53,12 @@ def get_list_of_local_files(local_files_path: str):
     return local_files
 
 
-def detect_changes(local_files: list[str], index: dict):
+def detect_changes(local_files: list[str], index: dict, extension: None | str = None):
     new_files = set(index.keys())
     current_files = set(local_files)
+    if extension:
+        new_files = set([file for file in new_files if os.path.splitext(file)[1] == extension])
+        current_files = set([file for file in current_files if os.path.splitext(file)[1] == extension])
     files_to_add = new_files - current_files
     files_to_delete = current_files - new_files
     files_to_add = {key: value for key, value in index.items() if key in files_to_add}
@@ -71,6 +74,18 @@ def patch_changes(local_files_path: str, files_to_add: dict[str: str], files_to_
             file_path=os.path.join(local_files_path, file_name),
             file_id=file_id
         )
+
+
+def synchronize_info(local_files_path: str, index: dict):
+    local_files = get_list_of_local_files(local_files_path)
+    files_to_add, _ = detect_changes(local_files=local_files, index=index, extension=".json")
+    patch_changes(local_files_path, files_to_add, set())
+
+
+def synchronize_data(local_files_path: str, index: dict):
+    local_files = get_list_of_local_files(local_files_path)
+    files_to_add, _ = detect_changes(local_files=local_files, index=index, extension=".gz")
+    patch_changes(local_files_path, files_to_add, set())
 
 
 def synchronize(local_files_path: str):

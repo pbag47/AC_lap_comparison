@@ -2,11 +2,13 @@
 import dash
 import dash_ag_grid
 import dash_bootstrap_components
+import os
 import pandas
 import plotly
+import threading
 
 from coordinates_handler import Origin, get_sections_from_ini_file
-from GoogleDrive_connector import synchronize
+from GoogleDrive_connector import synchronize_info, synchronize_data, update_index_file, import_files_index
 from data_import import parse_index, import_info, import_data, set_lap_tables, get_rankings
 from app_callbacks import get_lap_time_tables, plot_lap_times_graph, get_lap_times_comparison
 from podium import build_podium
@@ -15,14 +17,35 @@ import lap_analysis_layouts
 
 
 class Application:
-    def __init__(self, drivers, info, data, lap_times, app):
-        self.drivers = drivers
-        self.sections = get_sections_from_ini_file()
-        self.info = info
-        self.data = data
-        self.lap_times = lap_times
+    def __init__(self, app, data_files_path, synchronize_with_remote=True):
         self.app = app
-        self.rankings = get_rankings(self.drivers, self.lap_times)
+        self.data_files_path = data_files_path
+        self.index_file_name = "index.txt"
+
+        # Download of small file
+        update_index_file(os.path.join(self.data_files_path, self.index_file_name))
+
+        self.index = import_files_index(os.path.join(self.data_files_path, self.index_file_name))
+        self.sections = get_sections_from_ini_file()
+        track_map_origin = Origin
+        track_map_origin.setup("config/reference_points.txt")
+
+        self.info_download_thread = threading.Thread(
+            name="info_download_thread",
+            target=self.sync_info,
+            daemon=True,
+        )
+        self.data_download_thread = threading.Thread(
+            name="data_download_thread",
+            target=self.sync_data,
+            daemon=True,
+        )
+
+        self.drivers: list[str] = parse_index(self.data_files_path, index_file_name=self.index_file_name)
+        self.info: dict | None = None
+        self.data: pandas.DataFrame | None = None
+        self.lap_times: pandas.DataFrame | None = None
+        self.rankings: pandas.DataFrame | None = None
 
         figure = plot_lap_times_graph(self.drivers, self.lap_times)
 
@@ -41,11 +64,74 @@ class Application:
                 self.rankings_page,
                 self.lap_times_comparison_page,
                 self.lap_analysis_page,
+                dash.dcc.Interval(id="refresh-info-timer", interval=1_000, n_intervals=0),
+                dash.dcc.Interval(id="refresh-data-timer", interval=5_000, n_intervals=0),
             ],
         )
         self.setup_callbacks()
+        self.info_download_thread.start()
+        self.data_download_thread.start()
+
+    def sync_info(self):
+        """
+        This function is executed in a separate thread
+        """
+        synchronize_info(self.data_files_path, self.index)
+        self.info = import_info(self.data_files_path, self.drivers)
+        self.lap_times = set_lap_tables(self.info)
+        self.rankings = get_rankings(self.drivers, self.lap_times)
+
+    def sync_data(self):
+        """
+        This function is executed in a separate thread
+        """
+        synchronize_data(self.data_files_path, self.index)
+        self.data = import_data(self.data_files_path, self.drivers)
+
+    def info_download_check(self, _):
+        disable_timer = False
+        if self.info and not self.info_download_thread.is_alive():
+            disable_timer = True
+        return disable_timer
+
+    def data_download_check(self, _):
+        disable_timer = False
+        if self.data and not self.data_download_thread.is_alive():
+            disable_timer = True
+        return disable_timer
+
+    def build_rankings_page(self):
+        figure = plot_lap_times_graph(self.drivers, self.lap_times)
+        self.rankings_page = dash.html.Div([
+            dash.html.H2("Détail des tours", style={"margin": "30px"}),
+            dash.dcc.Graph(figure=figure),
+            *get_lap_time_tables(self.drivers, self.lap_times)
+        ], id="rankings-page")
+        return self.rankings_page
+
+    def build_layout(self):
+        self.app.layout = dash.html.Div(
+            [
+                dash.html.H1('Challenge CREA - Résultats', style={"margin": "30px"}),
+                build_podium(self.rankings),
+                self.build_rankings_page(),
+                self.lap_times_comparison_page,
+                self.lap_analysis_page,
+                dash.dcc.Interval(id="refresh-timer", interval=5_000, n_intervals=0),
+            ],
+        )
 
     def setup_callbacks(self):
+        self.app.callback(
+            [
+                dash.dependencies.Output("refresh-info-timer", "disabled"),
+                dash.dependencies.Input("refresh-info-timer", "n_intervals"),
+            ])(self.info_download_check)
+        self.app.callback(
+            [
+                dash.dependencies.Output("refresh-data-timer", "disabled"),
+                dash.dependencies.Input("refresh-data-timer", "n_intervals"),
+            ])(self.data_download_check)
         self.app.callback(
             [
                 dash.dependencies.Output(self.lap_times_comparison_page, "children"),
@@ -137,15 +223,6 @@ class Application:
 
 
 def main(data_files_path: str, synchronize_with_remote: bool) -> dash.Dash:
-    if synchronize_with_remote:
-        synchronize(data_files_path)
-
-    drivers = parse_index(data_files_path)
-    info = import_info(data_files_path, drivers)
-    data = import_data(data_files_path, drivers)
-    lap_times = set_lap_tables(info)
-    track_map_origin = Origin
-    track_map_origin.setup("config/reference_points.txt")
     # print(drivers, info, data, lap_times)
     app = dash.Dash(
         __name__,
@@ -156,7 +233,7 @@ def main(data_files_path: str, synchronize_with_remote: bool) -> dash.Dash:
         suppress_callback_exceptions=True,
         serve_locally=True,
     )
-    Application(drivers, info, data, lap_times, app)
+    Application(app, data_files_path, synchronize_with_remote=synchronize_with_remote)
     return app
 
 

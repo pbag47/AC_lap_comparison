@@ -143,7 +143,7 @@ def get_lap_times_comparison(info: dict, selected_laps: pandas.DataFrame) -> lis
     return [[header, grid]]
 
 
-def plot_lap_times_graph(drivers: str, lap_times: pandas.DataFrame) -> plotly.graph_objects.Figure:
+def plot_lap_times_graph(drivers: list[str], lap_times: pandas.DataFrame) -> plotly.graph_objects.Figure:
     figure = plotly.graph_objects.Figure()
     visible = True
     for driver in drivers:
