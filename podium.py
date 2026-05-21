@@ -3,7 +3,10 @@ import dash
 from dash import html
 
 
-def build_podium(df: pd.DataFrame) -> html.Div:
+def build_podium(df: pd.DataFrame | None) -> html.Div:
+    if df is None:
+        return html.Div()
+
     df = df.sort_values("Ranking").reset_index(drop=True)
 
     # -- Palette & styles communs ------------------------------------------
@@ -41,28 +44,39 @@ def build_podium(df: pd.DataFrame) -> html.Div:
         step_h = step_heights[rank]
         delay = {1: "0.1s", 2: "0.25s", 3: "0.4s"}[rank]
 
-        block = html.Div([
-            # Info pilote
-            html.Div([
-                html.Div(medal_label.get(rank, ""), className="podium-medal"),
-                html.Div(row["Driver"], className="podium-name",
-                         style={"color": color}),
-                html.Div(row["Lap time"], className="podium-time"),
-            ], className="podium-info"),
-            # Marche
-            html.Div(
-                html.Span(str(rank), className="podium-rank-num",
-                          style={"color": color}),
-                className="podium-step",
-                style={
-                    "height": step_h,
-                    "background": f"linear-gradient(180deg, {color}22 0%, {color}08 100%)",
-                    "border-top": f"3px solid {color}",
-                }
-            ),
-        ], className=f"podium-block podium-block--{rank}",
-           style={"animation-delay": delay})
-
+        block = html.Div(
+            [
+                # Info pilote
+                html.Div(
+                    [
+                        html.Div(medal_label.get(rank, ""), className="podium-medal"),
+                        html.Div(
+                            row["Driver"],
+                            className="podium-name",
+                            style={"color": color}
+                        ),
+                        html.Div(row["Lap time"], className="podium-time"),
+                    ],
+                    className="podium-info"
+                ),
+                # Marche
+                html.Div(
+                    html.Span(
+                        str(rank),
+                        className="podium-rank-num",
+                        style={"color": color}
+                    ),
+                    className="podium-step",
+                    style={
+                        "height": step_h,
+                        "background": f"linear-gradient(180deg, {color}22 0%, {color}08 100%)",
+                        "border-top": f"3px solid {color}",
+                    }
+                ),
+            ],
+            className=f"podium-block podium-block--{rank}",
+            style={"animation-delay": delay}
+        )
         podium_blocks.append(block)
 
     # -- Reste du classement (P4+) -----------------------------------------
@@ -75,27 +89,33 @@ def build_podium(df: pd.DataFrame) -> html.Div:
         )
         for i, (_, row) in enumerate(rest_rows.iterrows()):
             ranking_items.append(
-                html.Div([
-                    html.Span(f"P{row['Ranking']}", className="ranking-pos"),
-                    html.Span(row["Driver"], className="ranking-driver"),
-                    html.Span(row["Lap time"], className="ranking-time"),
-                ], className="ranking-row",
-                   style={"animation-delay": f"{0.5 + i * 0.07}s"})
+                html.Div(
+                    [
+                        html.Span(f"P{row['Ranking']}", className="ranking-pos"),
+                        html.Span(row["Driver"], className="ranking-driver"),
+                        html.Span(row["Lap time"], className="ranking-time"),
+                    ],
+                    className="ranking-row",
+                    style={"animation-delay": f"{0.5 + i * 0.07}s"}
+                )
             )
 
     # -- Assemblage ----------------------------------------------------------
-    return html.Div([
-        html.Div([
+    return html.Div(
+        [
             html.Div("Classement final · Meilleur tour", className="podium-title"),
             html.Div(podium_blocks, className="podium-stage"),
             html.Div(className="podium-baseline"),
             html.Div(ranking_items, className="ranking-table") if ranking_items else None,
-        ], className="podium-root",
-           style={"background": COLORS["card_bg"],
-                  "border-radius": "12px",
-                  "border": f"1px solid {COLORS['divider']}",
-                  "backdrop-filter": "blur(12px)"}),
-    ])
+        ],
+        className="podium-root",
+        style={
+            "background": COLORS["card_bg"],
+            "border-radius": "12px",
+            "border": f"1px solid {COLORS['divider']}",
+            "backdrop-filter": "blur(12px)"
+        }
+    )
 
 
 if __name__ == "__main__":

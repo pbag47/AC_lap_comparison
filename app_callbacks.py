@@ -9,6 +9,8 @@ import conditional_styling
 
 
 def get_lap_time_tables(drivers: list[str], lap_times: pandas.DataFrame) -> list:
+    if lap_times is None:
+        return []
     output = []
     overall_bests = lap_times[lap_times["IsValid"] == True].min()
     red_for_invalid = {
@@ -143,9 +145,12 @@ def get_lap_times_comparison(info: dict, selected_laps: pandas.DataFrame) -> lis
     return [[header, grid]]
 
 
-def plot_lap_times_graph(drivers: list[str], lap_times: pandas.DataFrame) -> plotly.graph_objects.Figure:
+def plot_lap_times_graph(drivers: list[str], lap_times: pandas.DataFrame | None) -> plotly.graph_objects.Figure:
     figure = plotly.graph_objects.Figure()
-    visible = True
+    if lap_times is None:
+        figure.update_layout(template="plotly_dark")
+        return figure
+
     for driver in drivers:
         if driver in ["Chuck", "momolafriteuz_2"]:
             visible = 'legendonly'

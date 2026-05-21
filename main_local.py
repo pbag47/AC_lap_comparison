@@ -6,6 +6,7 @@ import os
 import pandas
 import plotly
 import threading
+import time
 
 from coordinates_handler import Origin, get_sections_from_ini_file
 from GoogleDrive_connector import synchronize_info, synchronize_data, update_index_file, import_files_index
@@ -17,7 +18,7 @@ import lap_analysis_layouts
 
 
 class Application:
-    def __init__(self, app, data_files_path, synchronize_with_remote=True):
+    def __init__(self, app, data_files_path):
         self.app = app
         self.data_files_path = data_files_path
         self.index_file_name = "index.txt"
@@ -48,35 +49,42 @@ class Application:
         self.rankings: pandas.DataFrame | None = None
 
         figure = plot_lap_times_graph(self.drivers, self.lap_times)
-
-        self.rankings_page = dash.html.Div([
-            dash.html.H2("Détail des tours", style={"margin": "30px"}),
-            dash.dcc.Graph(figure=figure),
-            *get_lap_time_tables(self.drivers, self.lap_times)
-        ], id="rankings-page")
-        self.lap_times_comparison_page = dash.html.Div([], id="lap-times-comparison-page")
-        self.lap_analysis_page = dash.html.Div([], id="lap-analysis-page")
-
         self.app.layout = dash.html.Div(
             [
                 dash.html.H1('Challenge CREA - Résultats', style={"margin": "30px"}),
-                build_podium(self.rankings),
-                self.rankings_page,
-                self.lap_times_comparison_page,
-                self.lap_analysis_page,
+                dash.html.Div([build_podium(self.rankings)], id="podium"),
+                dash.html.Div(
+                    [
+                        dash.html.H2("Détail des tours", style={"margin": "30px"}),
+                        dash.dcc.Loading(
+                            [dash.dcc.Graph(figure=figure, id="lap-times-graph")],
+                            id="rankings-loading",
+                            display="show",
+                        ),
+                        dash.html.Div([], id="lap-times-tables"),
+                    ],
+                    id="rankings-page",
+                ),
+                dash.html.Div([], id="lap-times-comparison-page"),
+                dash.dcc.Loading(
+                    [dash.html.Div([], id="lap-analysis-page")],
+                    id="lap-analysis-loading",
+                    display="show",
+                ),
                 dash.dcc.Interval(id="refresh-info-timer", interval=1_000, n_intervals=0),
-                dash.dcc.Interval(id="refresh-data-timer", interval=5_000, n_intervals=0),
+                # dash.dcc.Interval(id="refresh-data-timer", interval=5_000, n_intervals=0),
             ],
         )
         self.setup_callbacks()
         self.info_download_thread.start()
-        self.data_download_thread.start()
+        # self.data_download_thread.start()
 
     def sync_info(self):
         """
         This function is executed in a separate thread
         """
         synchronize_info(self.data_files_path, self.index)
+        time.sleep(10)
         self.info = import_info(self.data_files_path, self.drivers)
         self.lap_times = set_lap_tables(self.info)
         self.rankings = get_rankings(self.drivers, self.lap_times)
@@ -88,11 +96,16 @@ class Application:
         synchronize_data(self.data_files_path, self.index)
         self.data = import_data(self.data_files_path, self.drivers)
 
-    def info_download_check(self, _):
+    def info_download_check(self, _) -> (bool, str, dash.html.Div, plotly.graph_objects.Figure, list):
         disable_timer = False
+        loading_display = "show"
         if self.info and not self.info_download_thread.is_alive():
             disable_timer = True
-        return disable_timer
+            loading_display = "hide"
+        podium = build_podium(self.rankings)
+        figure = plot_lap_times_graph(self.drivers, self.lap_times)
+        tables = get_lap_time_tables(self.drivers, self.lap_times)
+        return disable_timer, loading_display, podium, figure, tables
 
     def data_download_check(self, _):
         disable_timer = False
@@ -100,46 +113,29 @@ class Application:
             disable_timer = True
         return disable_timer
 
-    def build_rankings_page(self):
-        figure = plot_lap_times_graph(self.drivers, self.lap_times)
-        self.rankings_page = dash.html.Div([
-            dash.html.H2("Détail des tours", style={"margin": "30px"}),
-            dash.dcc.Graph(figure=figure),
-            *get_lap_time_tables(self.drivers, self.lap_times)
-        ], id="rankings-page")
-        return self.rankings_page
-
-    def build_layout(self):
-        self.app.layout = dash.html.Div(
-            [
-                dash.html.H1('Challenge CREA - Résultats', style={"margin": "30px"}),
-                build_podium(self.rankings),
-                self.build_rankings_page(),
-                self.lap_times_comparison_page,
-                self.lap_analysis_page,
-                dash.dcc.Interval(id="refresh-timer", interval=5_000, n_intervals=0),
-            ],
-        )
-
     def setup_callbacks(self):
         self.app.callback(
             [
                 dash.dependencies.Output("refresh-info-timer", "disabled"),
+                dash.dependencies.Output("rankings-loading", "display"),
+                dash.dependencies.Output("podium", "children"),
+                dash.dependencies.Output("lap-times-graph", "figure"),
+                dash.dependencies.Output("lap-times-tables", "children"),
                 dash.dependencies.Input("refresh-info-timer", "n_intervals"),
             ])(self.info_download_check)
+        # self.app.callback(
+        #     [
+        #         dash.dependencies.Output("refresh-data-timer", "disabled"),
+        #         dash.dependencies.Input("refresh-data-timer", "n_intervals"),
+        #     ])(self.data_download_check)
         self.app.callback(
             [
-                dash.dependencies.Output("refresh-data-timer", "disabled"),
-                dash.dependencies.Input("refresh-data-timer", "n_intervals"),
-            ])(self.data_download_check)
-        self.app.callback(
-            [
-                dash.dependencies.Output(self.lap_times_comparison_page, "children"),
+                dash.dependencies.Output("lap-times-comparison-page", "children"),
                 *[dash.dependencies.Input(driver + "lap-times", "selectedRows") for driver in self.drivers],
             ])(self.lap_times_comparison_page_callback)
         self.app.callback(
             [
-                dash.dependencies.Output(self.lap_analysis_page, "children"),
+                dash.dependencies.Output("lap-analysis-page", "children"),
                 [dash.dependencies.Input("lap-times-comparison", "selectedRows")],
                 *[dash.dependencies.State(driver + "lap-times", "selectedRows") for driver in self.drivers],
             ])(self.lap_analysis_page_callback)
@@ -222,8 +218,7 @@ class Application:
         ]]
 
 
-def main(data_files_path: str, synchronize_with_remote: bool) -> dash.Dash:
-    # print(drivers, info, data, lap_times)
+def main(data_files_path: str) -> dash.Dash:
     app = dash.Dash(
         __name__,
         external_stylesheets=[
@@ -233,13 +228,13 @@ def main(data_files_path: str, synchronize_with_remote: bool) -> dash.Dash:
         suppress_callback_exceptions=True,
         serve_locally=True,
     )
-    Application(app, data_files_path, synchronize_with_remote=synchronize_with_remote)
+    Application(app, data_files_path)
     return app
 
 
 if __name__ == "__main__":
     application = main(
-        data_files_path="compressed_data",
-        synchronize_with_remote=False,
+        # data_files_path="compressed_data",
+        data_files_path="test",
     )
     application.run(debug=True)
