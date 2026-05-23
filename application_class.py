@@ -1,6 +1,7 @@
 from main_local import main
 import logging
 
+
 logging.basicConfig(
     filename='logs/main_prod_v0.log',
     level=logging.INFO,

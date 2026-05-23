@@ -4,14 +4,15 @@ import numpy
 import os
 import pandas
 
-from preprocessing_info import get_laps
-from preprocessing_full import get_sectors, save_as_json, save_as_compressed_csv
+from paths import ROOT_PATH
+from preprocessing.info import get_laps
+from preprocessing.main import get_sectors, save_as_json, save_as_compressed_csv
 
 
 
 def preprocessing_info_momo():
-    json_export_file = os.path.join("json_data", "1775762035-momolafriteuz-11(145.956).json")
-    copied_file = os.path.join("compressed_data", "Piotr - Info.json")
+    json_export_file = os.path.join(ROOT_PATH, "json_data", "1775762035-momolafriteuz-11(145.956).json")
+    copied_file = os.path.join(ROOT_PATH, "compressed_data", "Piotr - Info.json")
     with open(json_export_file) as json_file:
         info = json.load(json_file)
     with open(copied_file) as json_file:
@@ -40,7 +41,7 @@ def generate_empty_dataframe(column_names: list[str]) -> pandas.DataFrame:
 
 
 def get_data_fields():
-    fields_index = os.path.join("config", "fields.txt")
+    fields_index = os.path.join(ROOT_PATH, "config", "fields.txt")
     with open(fields_index) as file:
         fields = file.readlines()
     filtered_fields = []
@@ -52,7 +53,7 @@ def get_data_fields():
 
 
 if __name__ == "__main__":
-    output_folder = "compressed_data"
+    output_folder = os.path.join(ROOT_PATH, "compressed_data")
     info_dict = preprocessing_info_momo()
     data_fields = get_data_fields()
     data = generate_empty_dataframe(data_fields)

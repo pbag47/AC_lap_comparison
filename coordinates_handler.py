@@ -1,9 +1,12 @@
+import configparser
+import lat_lon_parser
+import os
+
 from numpy import sin, cos, atan2, deg2rad, sqrt, rad2deg
 from PIL import Image
 from typing import Literal, Type
 
-import configparser
-import lat_lon_parser
+from paths import ROOT_PATH
 
 
 ALTITUDE = 254
@@ -74,7 +77,7 @@ class Section:
 
     def setup(self):
         if self.top_left is not None and self.bottom_right is not None:
-            image_file_name = 'config/sections/' + self.title + '.png'
+            image_file_name = os.path.join(ROOT_PATH, "config", "sections", self.title + '.png')
             self.image = Image.open(image_file_name)
         else:
             self.image = None
@@ -136,7 +139,9 @@ def get_reference_data(file_name: str) -> tuple[Coordinates, Coordinates]:
     return p1, p2
 
 
-def get_images_position(index_file_name: str = 'config/sections/index.txt') -> tuple:
+def get_images_position(index_file_name: str | None = None) -> tuple:
+    if index_file_name is None:
+        index_file_name = os.path.join(ROOT_PATH, "config", "sections", "index.txt")
     with open(index_file_name, 'r') as file:
         _ = file.readline()
         name = []
@@ -158,8 +163,16 @@ def get_images_position(index_file_name: str = 'config/sections/index.txt') -> t
         return name, tl_lat, tl_lon, br_lat, br_lon, x_offset, y_offset
 
 
-def get_sections_from_ini_file(ini_file_name: str = "config/sections/sections.ini") -> list[Section]:
-    name, tl_lat, tl_lon, br_lat, br_lon, x_offset, y_offset = get_images_position()
+def get_sections_from_ini_file(
+        sections_folder_path: str | None = None,
+        # ini_file_name: str = "config/sections/sections.ini"
+    ) -> list[Section]:
+    if sections_folder_path is None:
+        sections_folder_path = os.path.join(ROOT_PATH, "config", "sections")
+    sections_index_path = os.path.join(sections_folder_path, "index.txt")
+    ini_file_name = os.path.join(sections_folder_path, "sections.ini")
+
+    name, tl_lat, tl_lon, br_lat, br_lon, x_offset, y_offset = get_images_position(sections_index_path)
     config_parser = configparser.ConfigParser()
     config_parser.read(ini_file_name)
     sections_str = config_parser.sections()

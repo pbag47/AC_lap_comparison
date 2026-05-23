@@ -51,11 +51,11 @@ def preprocessing_info(raw_data_file, json_export_file) -> dict:
 
 def test() -> None:
     raw_data_file = os.path.join(
-        "raw_data",
+        "../raw_data",
         "corvette_c7_laguna_seca_example.csv"
     )
     json_export_file = os.path.join(
-        "json_data",
+        "../json_data",
         "1751654595-Chuck-8(106.737).json"
     )
     info_dict = preprocessing_info(raw_data_file, json_export_file)

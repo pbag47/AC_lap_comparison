@@ -6,8 +6,9 @@ import numpy
 import pandas
 
 from coordinates_handler import get_sections_from_ini_file
-from preprocessing_data import preprocessing_data, fix_car_pos_norm
-from preprocessing_info import preprocessing_info
+from paths import ROOT_PATH
+from preprocessing.data import preprocessing_data, fix_car_pos_norm
+from preprocessing.info import preprocessing_info
 
 
 def get_sectors() -> dict:
@@ -40,7 +41,9 @@ def get_sector_times(info: dict, data: pandas.DataFrame, sectors: dict) -> dict:
     return sectors_times
 
 
-def save_as_json(info_dict: dict, driver_name: str, output_folder: str = "compressed_data") -> None:
+def save_as_json(info_dict: dict, driver_name: str, output_folder: str | None = None) -> None:
+    if output_folder is None:
+        output_folder = os.path.join(ROOT_PATH, "compressed_data")
     new_json_file_path = os.path.join(
         output_folder,
         driver_name + " - Info.json"
@@ -50,7 +53,9 @@ def save_as_json(info_dict: dict, driver_name: str, output_folder: str = "compre
     print(f"{new_json_file_path}: file saved")
 
 
-def save_as_compressed_csv(data: pandas.DataFrame, driver_name: str, output_folder: str = "compressed_data") -> None:
+def save_as_compressed_csv(data: pandas.DataFrame, driver_name: str, output_folder: str | None = None) -> None:
+    if output_folder is None:
+        output_folder = os.path.join(ROOT_PATH, "compressed_data")
     new_file_path = os.path.join(
         output_folder,
         driver_name + " - Data.csv.gz",
@@ -74,14 +79,16 @@ def preprocessing(raw_data_file, json_export_file) -> (dict, pandas.DataFrame):
 
 def main():
     raw_csv_file = os.path.join(
+        ROOT_PATH,
         "raw_data",
         "19052026-183041-momolafriteuz_2-ks_audi_a1s1-ks_laguna_seca.csv"
     )
     json_file = os.path.join(
+        ROOT_PATH,
         "json_data",
         "1779208241-momolafriteuz_2-11(137.616).json"
     )
-    output_folder = "compressed_data"
+    output_folder = os.path.join(ROOT_PATH, "compressed_data")
     info_dict, data = preprocessing(raw_csv_file, json_file)
     print(info_dict)
     driver_name = info_dict["Driver"]

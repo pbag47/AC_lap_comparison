@@ -16,6 +16,7 @@ def filter_data(section, selected_lap, data) -> pandas.DataFrame:
     ]
     return filtered_data
 
+
 def plot_trajectory(figure, driver, lap, data) -> plotly.graph_objects.Figure:
     figure.add_trace(
         plotly.graph_objects.Scatter(

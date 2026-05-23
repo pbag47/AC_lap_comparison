@@ -3,9 +3,10 @@ import os
 import numpy
 import pandas
 
-from preprocessing_info import preprocessing_info
-from preprocessing_data import cleanup_headers, fix_coordinates, fix_lap_number, fix_rounding, resample_data, get_sample_rates
-from preprocessing_full import fix_car_pos_norm, get_sector_times, get_sectors, save_as_json, save_as_compressed_csv
+from paths import ROOT_PATH
+from preprocessing.info import preprocessing_info
+from preprocessing.data import cleanup_headers, fix_coordinates, fix_lap_number, fix_rounding, resample_data, get_sample_rates
+from preprocessing.main import fix_car_pos_norm, get_sector_times, get_sectors, save_as_json, save_as_compressed_csv
 
 
 def preprocessing(raw_data_file, json_export_file) -> (dict, pandas.DataFrame):
@@ -66,22 +67,26 @@ def resample_car_pos_norm(data: pandas.DataFrame) -> pandas.DataFrame:
 
 def main():
     first_raw_csv_file = os.path.join(
+        ROOT_PATH,
         "raw_data",
         "17042026-200819-toty-ks_audi_a1s1-ks_laguna_seca.csv"
     )
     first_json_file = os.path.join(
+        ROOT_PATH,
         "json_data",
         "1776449299-toty-10(158.03).json"
     )
     second_raw_csv_file = os.path.join(
+        ROOT_PATH,
         "raw_data",
         "17042026-204207-toty-ks_audi_a1s1-ks_laguna_seca.csv"
     )
     second_json_file = os.path.join(
+        ROOT_PATH,
         "json_data",
         "1776451327-toty-1(142.22).json"
     )
-    output_folder = "compressed_data"
+    output_folder = os.path.join(ROOT_PATH, "compressed_data")
     first_info_dict, first_data = preprocessing(first_raw_csv_file, first_json_file)
     second_info_dict, second_data = preprocessing(second_raw_csv_file, second_json_file)
 
@@ -116,7 +121,8 @@ def main():
 
 def test():
     from data_import import import_data
-    data = import_data("compressed_data", ["Chuck"])
+
+    data = import_data(os.path.join(ROOT_PATH, "compressed_data"), ["Chuck"])
     # matplotlib.pyplot.plot(data["Car Pos Norm"], marker=11)
     # matplotlib.pyplot.show()
     print(data)

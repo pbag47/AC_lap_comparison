@@ -29,7 +29,7 @@ def cleanup_headers(data: pandas.DataFrame) -> pandas.DataFrame:
     return data
 
 
-def get_sample_rates(config_file_name: str = 'config/sample_rates.txt') -> dict:
+def get_sample_rates(config_file_name: str = '../config/sample_rates.txt') -> dict:
     decoder = json.decoder.JSONDecoder()
     sample_rates = {}
     with open(config_file_name, 'r') as file:
@@ -153,7 +153,7 @@ def preprocessing_data(raw_data_file: str) -> pandas.DataFrame:
 
 def preprocessing_test():
     raw_data_file = os.path.join(
-        "raw_data",
+        "../raw_data",
         "corvette_c7_laguna_seca_example.csv"
     )
     df = preprocessing_data(raw_data_file)
@@ -163,7 +163,7 @@ def preprocessing_test():
 def read_test():
     df = pandas.read_csv(
         os.path.join(
-            "compressed_data",
+            "../compressed_data",
             "compressed_test.csv.gz",
         ),
         index_col=0,
