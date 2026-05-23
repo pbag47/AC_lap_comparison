@@ -1,17 +1,24 @@
 
+import logging
 import os
 import requests
 
 
+logger = logging.getLogger(__name__)
+
+
 def update_index_file(local_index_file_path: str):
+    logging.info("Updating index file from remote storage")
     index_file_id = "1Cr_4tQTBjm9yiAk_yO8MI92HMdb74oTW"
     retrieve_file_from_google_drive(
         file_path=local_index_file_path,
         file_id=index_file_id
     )
+    logger.info("Index file updated")
 
 
 def retrieve_file_from_google_drive(file_path: str, file_id: str):
+    logger.info(f"Downloading {file_path} from Google Drive")
     _, file_extension = os.path.splitext(file_path)
     query_url = f"https://drive.usercontent.google.com/download?id={file_id}&export=download&confirm=t"
     match file_extension:
@@ -34,6 +41,7 @@ def retrieve_file_from_google_drive(file_path: str, file_id: str):
                 file.write(response.text)
         case _:
             raise Exception(f"Unexpected file extension: {file_extension}")
+    logger.info(f"{file_path} downloaded")
 
 
 def import_files_index(index_path: str) -> dict:
@@ -54,26 +62,33 @@ def get_list_of_local_files(local_files_path: str):
 
 
 def detect_changes(local_files: list[str], index: dict, extension: None | str = None):
+    logger.info("Comparing local and remote files")
     new_files = set(index.keys())
     current_files = set(local_files)
     if extension:
+        logging.info(f"Focusing on {extension} files")
         new_files = set([file for file in new_files if os.path.splitext(file)[1] == extension])
         current_files = set([file for file in current_files if os.path.splitext(file)[1] == extension])
     files_to_add = new_files - current_files
     files_to_delete = current_files - new_files
     files_to_add = {key: value for key, value in index.items() if key in files_to_add}
+    logger.info(f"Changes detected: +{files_to_add}, -{files_to_delete}")
     return files_to_add, files_to_delete
 
 
 def patch_changes(local_files_path: str, files_to_add: dict[str: str], files_to_delete: set[str]):
+    logger.info("Patching file changes from remote to local")
     for file in files_to_delete:
         os.remove(os.path.join(local_files_path, file))
+        logger.info(f"{file} deleted")
 
     for file_name, file_id in files_to_add.items():
         retrieve_file_from_google_drive(
             file_path=os.path.join(local_files_path, file_name),
             file_id=file_id
         )
+        logger.info(f"File {file_name} added")
+    logger.info("Patch complete")
 
 
 def synchronize_info(local_files_path: str, index: dict):
@@ -98,5 +113,9 @@ def synchronize(local_files_path: str):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        filename='logs/GoogleDrive_connector.log',
+        level=logging.INFO,
+    )
     files_directory = "test"
     synchronize(local_files_path=files_directory)

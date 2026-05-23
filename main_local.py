@@ -3,7 +3,7 @@ import dash
 import dash_ag_grid
 import dash_bootstrap_components
 import os
-# import logging
+import logging
 import pandas
 import plotly
 import threading
@@ -15,6 +15,9 @@ from app_callbacks import get_lap_time_tables, plot_lap_times_graph, get_lap_tim
 from podium import build_podium
 import lap_analysis
 import lap_analysis_layouts
+
+
+logger = logging.getLogger(__name__)
 
 
 class Application:
@@ -119,7 +122,12 @@ class Application:
         page_load_timer_disabled = True
         sync_info_timer_disabled = False
         self.info_download_thread.start()
+        logger.info("Info synchronization thread started")
         return page_load_timer_disabled, sync_info_timer_disabled
+
+    def start_sync_data(self):
+        self.data_download_thread.start()
+        logger.info("Data synchronization thread started")
 
     def sync_info(self):
         """
@@ -129,6 +137,7 @@ class Application:
         self.info = import_info(self.data_files_path, self.drivers)
         self.lap_times = set_lap_tables(self.info)
         self.rankings = get_rankings(self.drivers, self.lap_times)
+        logger.info("Info synchronization thread stopped")
 
     def sync_data(self):
         """
@@ -136,6 +145,7 @@ class Application:
         """
         synchronize_data(self.data_files_path, self.index)
         self.data = import_data(self.data_files_path, self.drivers)
+        logger.info("Data synchronization thread stopped")
 
     def info_download_check(self, _) -> (bool, bool, str, dash.html.Div, plotly.graph_objects.Figure, list):
         disable_info_timer = False
@@ -147,7 +157,8 @@ class Application:
         ):
             disable_info_timer = True
             loading_display = "hide"
-            self.data_download_thread.start()
+            self.start_sync_data()
+            logger.info("App is now using Info")
             print("Rankings ready")
         podium = build_podium(self.rankings)
         figure = plot_lap_times_graph(self.drivers, self.lap_times)
@@ -162,6 +173,7 @@ class Application:
             display = "hide"
         if self.data is not None and not self.data_download_thread.is_alive():
             disable_timer = True
+            logger.info("App is now using data")
             print("Telemetry ready")
         return disable_timer, display
 
@@ -205,6 +217,7 @@ class Application:
                 [dash.dependencies.Input("lap-times-comparison", "selectedRows")],
                 *[dash.dependencies.State(driver + "lap-times", "selectedRows") for driver in self.drivers],
             ])(self.lap_analysis_page_callback)
+        logger.info("App callbacks defined")
 
     def lap_times_comparison_page_callback(self, *args) -> list:
         df = pandas.DataFrame()
@@ -224,6 +237,7 @@ class Application:
             plotly.graph_objects.Figure,
             plotly.graph_objects.Figure
         ):
+        logger.debug("Updating lap analysis page")
         selected_laps = []
         for driver_data in args:
             if not driver_data: continue
@@ -261,6 +275,7 @@ class Application:
             speed_figure,
         )
         track_map_figure = lap_analysis.plot_background(track_map_figure, selected_section[0])
+        logger.debug("Lap analysis page - Update completed")
         return header_str, track_map_figure, gg_diagram_figure, throttle_figure, brakes_figure, steering_figure, speed_figure
 
 
@@ -282,6 +297,10 @@ def main(data_files_path: str) -> dash.Dash:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        filename='logs/main_local.log',
+        level=logging.INFO,
+    )
     application = main(
         data_files_path="compressed_data",
         # data_files_path="test",
