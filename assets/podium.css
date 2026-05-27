@@ -1,0 +1,238 @@
+/* ==========================================================================
+   Podium Infographic – podium.css
+   Placé dans assets/, Dash le charge automatiquement.
+   ========================================================================== */
+
+/* -- Variables ------------------------------------------------------------- */
+:root {
+    --color-gold:      #FFD700;
+    --color-silver:    #C0C0C0;
+    --color-bronze:    #CD7F32;
+    --color-accent:    #4FC3F7;   /* cyan clair */
+    --color-text-main: #E8F4FD;
+    --color-text-dim:  #7EB8D4;
+    --color-divider:   rgba(78, 195, 247, 0.18);
+    --color-card-bg:   rgba(0, 20, 40, 0.55);
+
+    --font-mono:    'Courier New', 'Consolas', monospace;
+    --font-display: 'Trebuchet MS', 'Gill Sans', sans-serif;
+}
+
+/* -- Animations ------------------------------------------------------------ */
+@keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glowPulse {
+    0%, 100% { box-shadow: 0 0 18px 4px rgba(255, 215, 0, 0.35),
+                            0 0 60px 10px rgba(255, 215, 0, 0.10); }
+    50%       { box-shadow: 0 0 32px 8px rgba(255, 215, 0, 0.55),
+                            0 0 80px 20px rgba(255, 215, 0, 0.18); }
+}
+
+@keyframes scanline {
+    0%   { background-position: 0 0; }
+    100% { background-position: 0 4px; }
+}
+
+/* -- Conteneur racine ------------------------------------------------------ */
+.podium-root {
+    font-family: var(--font-display);
+    color: var(--color-text-main);
+    padding: 32px 24px 24px;
+    max-width: 780px;
+    margin: 0 auto;
+    position: relative;
+}
+
+/* -- Titre ----------------------------------------------------------------- */
+.podium-title {
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--color-text-dim);
+    margin-bottom: 36px;
+    position: relative;
+}
+
+.podium-title::before,
+.podium-title::after {
+    content: '';
+    display: inline-block;
+    width: 60px;
+    height: 1px;
+    vertical-align: middle;
+    margin: 0 14px;
+}
+
+.podium-title::before {
+    background: linear-gradient(90deg, transparent, var(--color-accent));
+}
+
+.podium-title::after {
+    background: linear-gradient(90deg, var(--color-accent), transparent);
+}
+
+/* -- Zone podium ----------------------------------------------------------- */
+.podium-stage {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 28px;
+}
+
+.podium-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: fadeSlideUp 0.6s ease both;
+    flex: 1;
+    max-width: 210px;
+}
+
+/* -- Info pilote (au-dessus de la marche) ---------------------------------- */
+.podium-info {
+    text-align: center;
+    margin-bottom: 10px;
+    padding: 0 4px;
+}
+
+.podium-medal {
+    font-size: 28px;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.podium-name {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 190px;
+}
+
+.podium-time {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    margin-top: 3px;
+    color: var(--color-text-dim);
+    letter-spacing: 1.5px;
+}
+
+/* -- Marche ---------------------------------------------------------------- */
+.podium-step {
+    width: 100%;
+    border-radius: 6px 6px 0 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+}
+
+.podium-step::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(255, 255, 255, 0.025) 3px,
+        rgba(255, 255, 255, 0.025) 4px
+    );
+    animation: scanline 0.8s linear infinite;
+    pointer-events: none;
+}
+
+.podium-rank-num {
+    font-size: 42px;
+    font-weight: 900;
+    letter-spacing: -2px;
+    opacity: 0.18;
+    line-height: 1;
+}
+
+/* -- Délais d'animation par position --------------------------------------- */
+.podium-block--1 { animation-delay: 0.10s; }
+.podium-block--2 { animation-delay: 0.25s; }
+.podium-block--3 { animation-delay: 0.40s; }
+
+/* P1 : lueur dorée pulsante sur la marche */
+.podium-block--1 .podium-step {
+    animation: glowPulse 2.8s ease-in-out infinite;
+}
+
+/* -- Ligne de base --------------------------------------------------------- */
+.podium-baseline {
+    height: 3px;
+    background: linear-gradient(
+        90deg,
+        transparent       0%,
+        var(--color-accent) 20%,
+        var(--color-gold)   50%,
+        var(--color-accent) 80%,
+        transparent       100%
+    );
+    border-radius: 2px;
+    margin-bottom: 32px;
+    opacity: 0.6;
+}
+
+/* -- Classement étendu (P4+) ----------------------------------------------- */
+.ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ranking-section-label {
+    font-size: 9px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--color-text-dim);
+    padding: 0 14px 8px;
+    opacity: 0.6;
+}
+
+.ranking-row {
+    display: grid;
+    grid-template-columns: 36px 1fr auto;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--color-divider);
+    animation: fadeSlideUp 0.5s ease both;
+    transition: background 0.2s;
+}
+
+.ranking-row:hover       { background: rgba(79, 195, 247, 0.06); }
+.ranking-row:last-child  { border-bottom: none; }
+
+.ranking-pos {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-text-dim);
+    letter-spacing: 1px;
+}
+
+.ranking-driver {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 0 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ranking-time {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text-dim);
+    letter-spacing: 1.5px;
+    text-align: right;
+}
